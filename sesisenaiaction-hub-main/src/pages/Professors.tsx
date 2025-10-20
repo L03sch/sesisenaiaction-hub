@@ -6,8 +6,21 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Search, Mail, Briefcase } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, Mail, Briefcase, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface Professor {
   id: string;
@@ -23,6 +36,8 @@ export default function Professors() {
   const [filteredProfessors, setFilteredProfessors] = useState<Professor[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [currentUserRole, setCurrentUserRole] = useState<string>("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -30,6 +45,17 @@ export default function Professors() {
       if (!session) {
         navigate("/auth");
         return;
+      }
+
+      // Buscar o perfil do usuário atual
+      const { data: currentProfile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", session.user.id)
+        .single();
+
+      if (currentProfile) {
+        setCurrentUserRole(currentProfile.role);
       }
 
       const { data } = await supabase
@@ -79,6 +105,38 @@ export default function Professors() {
     return colors[role as keyof typeof colors] || "bg-muted";
   };
 
+  const handleDeleteUser = async (userId: string, userName: string) => {
+    setDeletingId(userId);
+    try {
+      // Verificar se o usuário não está tentando excluir a si mesmo
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user.id === userId) {
+        toast.error("Você não pode excluir seu próprio acesso!");
+        setDeletingId(null);
+        return;
+      }
+
+      // Excluir o perfil do usuário
+      const { error } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("id", userId);
+
+      if (error) throw error;
+
+      // Atualizar a lista de professores
+      setProfessors(professors.filter((p) => p.id !== userId));
+      setFilteredProfessors(filteredProfessors.filter((p) => p.id !== userId));
+      
+      toast.success(`Acesso de ${userName} removido com sucesso!`);
+    } catch (error) {
+      console.error("Erro ao excluir usuário:", error);
+      toast.error("Erro ao remover acesso. Tente novamente.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -122,9 +180,43 @@ export default function Professors() {
                         {prof.full_name.split(" ").map((n) => n[0]).join("").substring(0, 2)}
                       </AvatarFallback>
                     </Avatar>
-                    <Badge className={getRoleColor(prof.role)}>
-                      {getRoleLabel(prof.role)}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge className={getRoleColor(prof.role)}>
+                        {getRoleLabel(prof.role)}
+                      </Badge>
+                      {currentUserRole === "admin" && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              disabled={deletingId === prof.id}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja remover o acesso de{" "}
+                                <strong>{prof.full_name}</strong>? Esta ação não pode ser desfeita.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteUser(prof.id, prof.full_name)}
+                                className="bg-destructive hover:bg-destructive/90"
+                              >
+                                Excluir
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
                   </div>
 
                   <div className="space-y-2">

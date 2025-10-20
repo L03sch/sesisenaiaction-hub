@@ -8,10 +8,13 @@ import {
   LogOut,
   Menu,
   GraduationCap,
+  Moon,
+  Sun,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/hooks/use-theme";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -22,6 +25,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [userName, setUserName] = useState("");
+  const { theme, setTheme } = useTheme();
 
   useEffect(() => {
     const getUserData = async () => {
@@ -105,8 +109,38 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* User & Logout */}
           <div className="p-4 border-t border-border space-y-2">
             {sidebarOpen && userName && (
-              <div className="px-4 py-2 text-sm">
+              <div className="px-4 py-2 text-sm flex items-center justify-between gap-2">
                 <p className="font-medium truncate">{userName}</p>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                  className="h-8 w-8 flex-shrink-0"
+                  title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+                >
+                  {theme === "dark" ? (
+                    <Sun className="w-4 h-4" />
+                  ) : (
+                    <Moon className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
+            )}
+            {!sidebarOpen && (
+              <div className="flex justify-center">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                  className="h-10 w-10"
+                  title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+                >
+                  {theme === "dark" ? (
+                    <Sun className="w-5 h-5" />
+                  ) : (
+                    <Moon className="w-5 h-5" />
+                  )}
+                </Button>
               </div>
             )}
             <Button

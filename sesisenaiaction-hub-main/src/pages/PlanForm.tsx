@@ -8,9 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { ArrowLeft, Loader2, Save } from "lucide-react";
+import { ArrowLeft, Loader2, Save, Search } from "lucide-react";
 import { format } from "date-fns";
 
 interface Professor {
@@ -26,7 +26,9 @@ export default function PlanForm() {
 
   const [loading, setLoading] = useState(false);
   const [professors, setProfessors] = useState<Professor[]>([]);
+  const [filteredProfessors, setFilteredProfessors] = useState<Professor[]>([]);
   const [selectedProfessors, setSelectedProfessors] = useState<string[]>([]);
+  const [professorSearch, setProfessorSearch] = useState("");
   
   const [formData, setFormData] = useState({
     title: "",
@@ -65,7 +67,10 @@ export default function PlanForm() {
         .select("id, full_name, department")
         .order("full_name");
       
-      if (data) setProfessors(data);
+      if (data) {
+        setProfessors(data);
+        setFilteredProfessors(data);
+      }
     };
 
     const fetchPlan = async () => {
@@ -103,6 +108,28 @@ export default function PlanForm() {
     fetchProfessors();
     fetchPlan();
   }, [navigate, id, isEditing]);
+
+  // Effect para filtrar professores baseado na busca
+  useEffect(() => {
+    if (professorSearch.trim() === "") {
+      setFilteredProfessors(professors);
+    } else {
+      const filtered = professors.filter((prof) => {
+        const searchTerm = professorSearch.toLowerCase();
+        const fullName = prof.full_name.toLowerCase();
+        const department = prof.department?.toLowerCase() || "";
+        
+        // Verifica se alguma palavra do nome ou sobrenome começa com o termo de busca
+        const nameWords = fullName.split(" ");
+        const startsWithSearch = nameWords.some(word => word.startsWith(searchTerm));
+        
+        return startsWithSearch || 
+               fullName.includes(searchTerm) || 
+               department.includes(searchTerm);
+      });
+      setFilteredProfessors(filtered);
+    }
+  }, [professorSearch, professors]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -289,24 +316,56 @@ export default function PlanForm() {
             <CardHeader>
               <CardTitle>Professores Participantes</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto">
-                {professors.map((prof) => (
-                  <div key={prof.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={prof.id}
-                      checked={selectedProfessors.includes(prof.id)}
-                      onCheckedChange={() => toggleProfessor(prof.id)}
-                    />
-                    <label htmlFor={prof.id} className="text-sm cursor-pointer">
-                      {prof.full_name}
-                      {prof.department && (
-                        <span className="text-muted-foreground"> - {prof.department}</span>
-                      )}
-                    </label>
-                  </div>
-                ))}
+            <CardContent className="space-y-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <Input
+                  placeholder="Buscar professores por nome ou departamento..."
+                  value={professorSearch}
+                  onChange={(e) => setProfessorSearch(e.target.value)}
+                  className="pl-10"
+                />
               </div>
+              
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {filteredProfessors.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    {professorSearch ? "Nenhum professor encontrado" : "Nenhum professor disponível"}
+                  </div>
+                ) : (
+                  filteredProfessors.map((prof) => (
+                    <div
+                      key={prof.id}
+                      onClick={() => toggleProfessor(prof.id)}
+                      className={`p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md ${
+                        selectedProfessors.includes(prof.id)
+                          ? "bg-primary/10 border-primary"
+                          : "bg-background border-border hover:bg-muted"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="font-medium">{prof.full_name}</div>
+                          {prof.department && (
+                            <div className="text-sm text-muted-foreground">{prof.department}</div>
+                          )}
+                        </div>
+                        {selectedProfessors.includes(prof.id) && (
+                          <Badge variant="secondary" className="ml-2">
+                            Selecionado
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+              
+              {selectedProfessors.length > 0 && (
+                <div className="text-sm text-muted-foreground">
+                  {selectedProfessors.length} professor(es) selecionado(s)
+                </div>
+              )}
             </CardContent>
           </Card>
 

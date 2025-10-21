@@ -208,7 +208,7 @@ export default function PlanDetails() {
         </div>
 
         <div className="flex gap-2">
-          <Badge className={getStatusColor(plan.status)}>
+          <Badge className={`${getStatusColor(plan.status)} ${plan.status === 'in_progress' ? 'text-white' : ''}`}>
             {getStatusLabel(plan.status)}
           </Badge>
           <Badge variant="outline">

@@ -7,7 +7,6 @@ import {
   Users,
   LogOut,
   Menu,
-  GraduationCap,
   Moon,
   Sun,
 } from "lucide-react";
@@ -73,7 +72,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* Header */}
           <div className="flex items-center gap-3 p-6 border-b border-border">
             <div className="w-10 h-10 rounded-lg bg-gradient-primary flex items-center justify-center flex-shrink-0">
-              <GraduationCap className="w-6 h-6 text-primary-foreground" />
+              <img src="/S.png" alt="SESI SENAI" className="w-10 h-10 rounded" />
             </div>
             {sidebarOpen && (
               <div className="flex-1 min-w-0">

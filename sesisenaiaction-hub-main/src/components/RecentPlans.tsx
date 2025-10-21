@@ -95,7 +95,7 @@ export function RecentPlans() {
                 <div className="space-y-1 flex-1">
                   <h4 className="font-medium">{plan.title}</h4>
                   <div className="flex gap-2 flex-wrap">
-                    <Badge variant="outline" className={getStatusColor(plan.status)}>
+                    <Badge variant="outline" className={`${getStatusColor(plan.status)} ${plan.status === 'in_progress' ? 'text-white' : ''}`}>
                       {getStatusLabel(plan.status)}
                     </Badge>
                     <Badge variant="outline">

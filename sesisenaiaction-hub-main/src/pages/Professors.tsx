@@ -7,6 +7,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Search, Mail, Briefcase, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
@@ -36,6 +43,7 @@ export default function Professors() {
   const [filteredProfessors, setFilteredProfessors] = useState<Professor[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
   const [currentUserRole, setCurrentUserRole] = useState<string>("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -74,18 +82,23 @@ export default function Professors() {
   }, [navigate]);
 
   useEffect(() => {
-    if (search) {
-      setFilteredProfessors(
-        professors.filter((prof) =>
-          prof.full_name.toLowerCase().includes(search.toLowerCase()) ||
-          prof.email.toLowerCase().includes(search.toLowerCase()) ||
-          (prof.department && prof.department.toLowerCase().includes(search.toLowerCase()))
-        )
-      );
-    } else {
-      setFilteredProfessors(professors);
-    }
-  }, [search, professors]);
+    const normalizedSearch = search.toLowerCase();
+    const normalizedRole = roleFilter === "all" ? null : roleFilter;
+
+    setFilteredProfessors(
+      professors.filter((prof) => {
+        const matchesSearch = normalizedSearch
+          ? prof.full_name.toLowerCase().includes(normalizedSearch) ||
+            prof.email.toLowerCase().includes(normalizedSearch) ||
+            (prof.department && prof.department.toLowerCase().includes(normalizedSearch))
+          : true;
+
+        const matchesRole = normalizedRole ? prof.role === normalizedRole : true;
+
+        return matchesSearch && matchesRole;
+      })
+    );
+  }, [search, roleFilter, professors]);
 
   const getRoleLabel = (role: string) => {
     const labels = {
@@ -141,18 +154,31 @@ export default function Professors() {
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Professores</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Usuários</h1>
           <p className="text-muted-foreground">Visualize todos os usuários do sistema</p>
         </div>
 
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-          <Input
-            placeholder="Buscar por nome, email ou departamento..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
-          />
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="relative w-full md:max-w-sm">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            <Input
+              placeholder="Buscar por nome, email ou departamento..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={roleFilter} onValueChange={setRoleFilter}>
+            <SelectTrigger className="w-full md:w-64">
+              <SelectValue placeholder="Filtrar por tipo de usuário" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os tipos</SelectItem>
+              <SelectItem value="admin">Administrador</SelectItem>
+              <SelectItem value="professor">Professor</SelectItem>
+              <SelectItem value="coordenador">Coordenador</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         {loading ? (

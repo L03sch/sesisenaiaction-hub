@@ -226,7 +226,7 @@ export default function Users() {
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredProfessors.map((prof) => (
-              <Card key={prof.id} className="hover:shadow-lg transition-all">
+              <Card key={prof.id} className="hover:shadow-lg hover:scale-[1.02] transition-all cursor-pointer">
                 <CardContent className="p-6 space-y-4">
                   <div className="flex items-start justify-between">
                     <Avatar className="h-12 w-12">

@@ -54,7 +54,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const menuItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
     { icon: ClipboardList, label: "Planos de Ação", path: "/plans" },
-    { icon: Users, label: "Professores", path: "/professors" },
+    { icon: Users, label: "Usuários", path: "/users" },
   ];
 
   const isActive = (path: string) => location.pathname === path;

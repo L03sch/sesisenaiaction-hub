@@ -10,7 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Plans from "./pages/Plans";
 import PlanForm from "./pages/PlanForm";
 import PlanDetails from "./pages/PlanDetails";
-import Professors from "./pages/Professors";
+import Users from "./pages/Users";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,7 +30,7 @@ const App = () => (
             <Route path="/plans/new" element={<PlanForm />} />
             <Route path="/plans/:id" element={<PlanDetails />} />
             <Route path="/plans/:id/edit" element={<PlanForm />} />
-            <Route path="/professors" element={<Professors />} />
+            <Route path="/users" element={<Users />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

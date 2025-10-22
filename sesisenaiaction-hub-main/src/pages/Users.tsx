@@ -129,22 +129,45 @@ export default function Users() {
         return;
       }
 
-      // Excluir o perfil do usuário
-      const { error } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("id", userId);
+      // Chamar a função do banco de dados que faz a exclusão completa
+      const { data, error } = await (supabase as any).rpc("delete_user_completely", {
+        user_id: userId,
+      });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Erro completo ao excluir usuário:", error);
+        console.error("Detalhes do erro:", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code
+        });
+        throw error;
+      }
 
       // Atualizar a lista de professores
       setProfessors(professors.filter((p) => p.id !== userId));
       setFilteredProfessors(filteredProfessors.filter((p) => p.id !== userId));
       
-      toast.success(`Acesso de ${userName} removido com sucesso!`);
-    } catch (error) {
-      console.error("Erro ao excluir usuário:", error);
-      toast.error("Erro ao remover acesso. Tente novamente.");
+      toast.success(`Usuário ${userName} excluído permanentemente do sistema!`);
+    } catch (error: any) {
+      console.error("Erro capturado:", error);
+      
+      // Mostrar mensagem de erro mais específica
+      const errorMessage = error.message || error.toString();
+      console.error("Mensagem de erro:", errorMessage);
+      
+      if (errorMessage?.includes('administradores')) {
+        toast.error("Apenas administradores podem excluir usuários");
+      } else if (errorMessage?.includes('próprio acesso')) {
+        toast.error("Você não pode excluir seu próprio acesso!");
+      } else if (errorMessage?.includes('function') && errorMessage?.includes('does not exist')) {
+        toast.error("Função de exclusão não encontrada no banco de dados. Execute o SQL de migração.");
+      } else if (error.code) {
+        toast.error(`Erro ${error.code}: ${errorMessage}`);
+      } else {
+        toast.error(`Erro: ${errorMessage}`);
+      }
     } finally {
       setDeletingId(null);
     }

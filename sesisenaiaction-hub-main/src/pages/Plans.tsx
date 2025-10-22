@@ -122,7 +122,7 @@ export default function Plans() {
         </div>
 
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground dark:text-white w-4 h-4" />
           <Input
             placeholder="Buscar planos..."
             value={search}
@@ -173,7 +173,7 @@ export default function Plans() {
                   </div>
 
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Calendar className="w-4 h-4" />
+                    <Calendar className="w-4 h-4 dark:text-white" />
                     <span>
                       {format(new Date(plan.start_date), "dd MMM", { locale: ptBR })} -{" "}
                       {format(new Date(plan.end_date), "dd MMM yyyy", { locale: ptBR })}

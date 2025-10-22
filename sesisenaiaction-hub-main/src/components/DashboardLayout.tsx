@@ -109,34 +109,26 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* User & Logout */}
           <div className="p-4 border-t border-border space-y-2">
             {sidebarOpen && userName && (
-              <Button
-                variant="ghost"
-                onClick={() => navigate("/account")}
-                className="w-full justify-start px-4 py-2 h-auto hover:bg-muted"
-              >
-                <div className="flex items-center justify-between gap-2 w-full">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <User className="w-4 h-4 flex-shrink-0" />
-                    <span className="font-medium truncate text-sm">{userName}</span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setTheme(theme === "dark" ? "light" : "dark");
-                    }}
-                    className="h-8 w-8 flex-shrink-0"
-                    title={theme === "dark" ? "Modo claro" : "Modo escuro"}
-                  >
-                    {theme === "dark" ? (
-                      <Sun className="w-4 h-4" />
-                    ) : (
-                      <Moon className="w-4 h-4" />
-                    )}
-                  </Button>
-                </div>
-              </Button>
+              <div className="flex items-center justify-between gap-2 w-full px-4 py-2 rounded-lg hover:bg-muted transition-colors">
+                <button
+                  onClick={() => navigate("/account")}
+                  className="flex items-center gap-2 min-w-0 flex-1 text-left"
+                >
+                  <User className="w-4 h-4 flex-shrink-0" />
+                  <span className="font-medium truncate text-sm">{userName}</span>
+                </button>
+                <button
+                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                  className="h-8 w-8 flex-shrink-0 flex items-center justify-center rounded-md hover:bg-accent transition-colors"
+                  title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+                >
+                  {theme === "dark" ? (
+                    <Sun className="w-4 h-4" />
+                  ) : (
+                    <Moon className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
             )}
             {!sidebarOpen && (
               <div className="flex flex-col gap-2">

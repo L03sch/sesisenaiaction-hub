@@ -9,6 +9,7 @@ import {
   Menu,
   Moon,
   Sun,
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -108,25 +109,46 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {/* User & Logout */}
           <div className="p-4 border-t border-border space-y-2">
             {sidebarOpen && userName && (
-              <div className="px-4 py-2 text-sm flex items-center justify-between gap-2">
-                <p className="font-medium truncate">{userName}</p>
+              <Button
+                variant="ghost"
+                onClick={() => navigate("/account")}
+                className="w-full justify-start px-4 py-2 h-auto hover:bg-muted"
+              >
+                <div className="flex items-center justify-between gap-2 w-full">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <User className="w-4 h-4 flex-shrink-0" />
+                    <span className="font-medium truncate text-sm">{userName}</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setTheme(theme === "dark" ? "light" : "dark");
+                    }}
+                    className="h-8 w-8 flex-shrink-0"
+                    title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+                  >
+                    {theme === "dark" ? (
+                      <Sun className="w-4 h-4" />
+                    ) : (
+                      <Moon className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
+              </Button>
+            )}
+            {!sidebarOpen && (
+              <div className="flex flex-col gap-2">
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                  className="h-8 w-8 flex-shrink-0"
-                  title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+                  onClick={() => navigate("/account")}
+                  className="h-10 w-10"
+                  title="Minha Conta"
                 >
-                  {theme === "dark" ? (
-                    <Sun className="w-4 h-4" />
-                  ) : (
-                    <Moon className="w-4 h-4" />
-                  )}
+                  <User className="w-5 h-5" />
                 </Button>
-              </div>
-            )}
-            {!sidebarOpen && (
-              <div className="flex justify-center">
                 <Button
                   variant="ghost"
                   size="icon"

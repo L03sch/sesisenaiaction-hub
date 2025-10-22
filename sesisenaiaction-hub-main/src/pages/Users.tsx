@@ -29,7 +29,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-interface Professor {
+interface UserProfile {
   id: string;
   full_name: string;
   email: string;
@@ -37,10 +37,10 @@ interface Professor {
   department: string | null;
 }
 
-export default function Professors() {
+export default function Users() {
   const navigate = useNavigate();
-  const [professors, setProfessors] = useState<Professor[]>([]);
-  const [filteredProfessors, setFilteredProfessors] = useState<Professor[]>([]);
+  const [professors, setProfessors] = useState<UserProfile[]>([]);
+  const [filteredProfessors, setFilteredProfessors] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
@@ -181,7 +181,7 @@ export default function Professors() {
           <p className="text-muted-foreground">Visualize todos os usuários do sistema</p>
         </div>
 
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div className="relative w-full md:max-w-sm">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground dark:text-white w-4 h-4" />
             <Input
@@ -191,17 +191,22 @@ export default function Professors() {
               className="pl-10"
             />
           </div>
-          <Select value={roleFilter} onValueChange={setRoleFilter}>
-            <SelectTrigger className="w-full md:w-64">
-              <SelectValue placeholder="Filtrar por tipo de usuário" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os tipos</SelectItem>
-              <SelectItem value="admin">Administrador</SelectItem>
-              <SelectItem value="professor">Professor</SelectItem>
-              <SelectItem value="coordenador">Coordenador</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col gap-2 w-full md:w-auto md:items-end">
+            <span className="text-sm text-muted-foreground md:text-right">
+              {filteredProfessors.length} usuário{filteredProfessors.length === 1 ? "" : "s"} encontrado{filteredProfessors.length === 1 ? "" : "s"}
+            </span>
+            <Select value={roleFilter} onValueChange={setRoleFilter}>
+              <SelectTrigger className="w-full md:w-64">
+                <SelectValue placeholder="Filtrar por tipo de usuário" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os tipos</SelectItem>
+                <SelectItem value="admin">Administrador</SelectItem>
+                <SelectItem value="professor">Professor</SelectItem>
+                <SelectItem value="coordenador">Coordenador</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {loading ? (
@@ -221,7 +226,7 @@ export default function Professors() {
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {filteredProfessors.map((prof) => (
-              <Card key={prof.id} className="hover:shadow-lg transition-all">
+              <Card key={prof.id} className="hover:shadow-lg hover:scale-[1.02] transition-all cursor-pointer">
                 <CardContent className="p-6 space-y-4">
                   <div className="flex items-start justify-between">
                     <Avatar className="h-12 w-12">

@@ -12,6 +12,7 @@ import PlanForm from "./pages/PlanForm";
 import PlanDetails from "./pages/PlanDetails";
 import Users from "./pages/Users";
 import Account from "./pages/Account";
+import Support from "./pages/Support";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
             <Route path="/plans/:id/edit" element={<PlanForm />} />
             <Route path="/users" element={<Users />} />
             <Route path="/account" element={<Account />} />
+            <Route path="/support" element={<Support />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -10,6 +10,7 @@ import {
   Moon,
   Sun,
   User,
+  MessageCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -56,6 +57,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
     { icon: ClipboardList, label: "Planos de Ação", path: "/plans" },
     { icon: Users, label: "Usuários", path: "/users" },
+    { icon: MessageCircle, label: "Suporte", path: "/support" },
   ];
 
   const isActive = (path: string) => location.pathname === path;

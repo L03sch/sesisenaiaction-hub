@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/hooks/use-theme";
+import { AccessibilityButton } from "@/components/AccessibilityButton";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -63,7 +64,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <div className="min-h-screen flex w-full bg-background">
+    <>
+      <AccessibilityButton />
+      <div className="min-h-screen flex w-full bg-background">
       {/* Sidebar */}
       <aside
         className={cn(
@@ -188,6 +191,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </header>
         <main className="p-6">{children}</main>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

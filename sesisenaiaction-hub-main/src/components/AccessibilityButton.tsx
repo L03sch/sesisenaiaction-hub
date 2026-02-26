@@ -21,20 +21,39 @@ interface AccessibilityButtonProps {
   sidebarOpen: boolean;
 }
 
+const STORAGE_KEY = "accessibility-options";
+
+const defaultOptions = {
+  highContrast: false,
+  largeText: false,
+  readingGuide: false,
+  textToSpeech: false,
+  reducedMotion: false,
+  fontSize: [16],
+  colorBlindMode: false,
+};
+
+function loadOptions() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) return { ...defaultOptions, ...JSON.parse(stored) };
+  } catch {}
+  return defaultOptions;
+}
+
 export function AccessibilityButton({ sidebarOpen }: AccessibilityButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [guideY, setGuideY] = useState(0);
   const ttsActiveRef = useRef(false);
 
-  const [options, setOptions] = useState({
-    highContrast: false,
-    largeText: false,
-    readingGuide: false,
-    textToSpeech: false,
-    reducedMotion: false,
-    fontSize: [16],
-    colorBlindMode: false,
-  });
+  const [options, setOptions] = useState(loadOptions);
+
+  // Persiste as opções no localStorage sempre que mudarem
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(options));
+    } catch {}
+  }, [options]);
 
   // Alto Contraste
   useEffect(() => {

@@ -1,9 +1,10 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
+import { cn } from "@/lib/utils";
 import { 
   Accessibility, 
   Eye, 
@@ -16,14 +17,15 @@ import {
   Maximize2
 } from "lucide-react";
 
-export function AccessibilityButton() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const [position, setPosition] = useState({ x: window.innerWidth - 100, y: 100 });
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
-  const buttonRef = useRef<HTMLDivElement>(null);
+interface AccessibilityButtonProps {
+  sidebarOpen: boolean;
+}
 
-  // Opções de acessibilidade (sem funcionalidade ainda)
+export function AccessibilityButton({ sidebarOpen }: AccessibilityButtonProps) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [guideY, setGuideY] = useState(0);
+  const ttsActiveRef = useRef(false);
+
   const [options, setOptions] = useState({
     highContrast: false,
     largeText: false,
@@ -34,94 +36,120 @@ export function AccessibilityButton() {
     colorBlindMode: false,
   });
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if ((e.target as HTMLElement).closest('.accessibility-menu')) {
-      return; // Não arrastar se clicar no menu
-    }
-    
-    setIsDragging(true);
-    const rect = buttonRef.current?.getBoundingClientRect();
-    if (rect) {
-      setDragOffset({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
-      });
-    }
-  };
-
-  const handleMouseMove = (e: MouseEvent) => {
-    if (isDragging) {
-      const newX = e.clientX - dragOffset.x;
-      const newY = e.clientY - dragOffset.y;
-      
-      // Limitar às bordas da janela
-      const maxX = window.innerWidth - 80;
-      const maxY = window.innerHeight - 80;
-      
-      setPosition({
-        x: Math.max(0, Math.min(newX, maxX)),
-        y: Math.max(0, Math.min(newY, maxY)),
-      });
-    }
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-  };
-
+  // Alto Contraste
   useEffect(() => {
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = 'grabbing';
-      document.body.style.userSelect = 'none';
-    } else {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    }
+    document.documentElement.classList.toggle("high-contrast", options.highContrast);
+  }, [options.highContrast]);
 
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
+  // Texto Grande
+  useEffect(() => {
+    document.documentElement.classList.toggle("large-text", options.largeText);
+  }, [options.largeText]);
+
+  // Tamanho da Fonte
+  useEffect(() => {
+    document.documentElement.style.fontSize = `${options.fontSize[0]}px`;
+  }, [options.fontSize]);
+
+  // Reduzir Animações
+  useEffect(() => {
+    document.documentElement.classList.toggle("reduced-motion", options.reducedMotion);
+  }, [options.reducedMotion]);
+
+  // Modo Daltônico
+  useEffect(() => {
+    document.documentElement.classList.toggle("colorblind-mode", options.colorBlindMode);
+  }, [options.colorBlindMode]);
+
+  // Guia de Leitura — acompanha o mouse
+  useEffect(() => {
+    if (!options.readingGuide) return;
+    const handleMouseMove = (e: MouseEvent) => setGuideY(e.clientY);
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, [options.readingGuide]);
+
+  // Texto para Fala — lê o texto do elemento clicado
+  useEffect(() => {
+    ttsActiveRef.current = options.textToSpeech;
+    if (!options.textToSpeech) {
+      window.speechSynthesis?.cancel();
+      return;
+    }
+    const handleClick = (e: MouseEvent) => {
+      if (!ttsActiveRef.current) return;
+      const target = e.target as HTMLElement;
+      const text = target.innerText?.trim() || target.textContent?.trim();
+      if (!text) return;
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "pt-BR";
+      utterance.rate = 0.95;
+      window.speechSynthesis.speak(utterance);
     };
-  }, [isDragging, dragOffset]);
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
+  }, [options.textToSpeech]);
 
   return (
     <>
-      {/* Botão Flutuante */}
-      <div
-        ref={buttonRef}
-        style={{
-          position: 'fixed',
-          left: `${position.x}px`,
-          top: `${position.y}px`,
-          zIndex: 9999,
-          cursor: isDragging ? 'grabbing' : 'grab',
-        }}
-        onMouseDown={handleMouseDown}
-      >
-        <Button
-          size="icon"
-          className="h-16 w-16 rounded-full shadow-2xl bg-primary hover:bg-primary/90 transition-all duration-200 hover:scale-110"
-          onClick={() => !isDragging && setIsOpen(!isOpen)}
-          title="Opções de Acessibilidade"
-        >
-          <Accessibility className="h-8 w-8" />
-        </Button>
-      </div>
+      {/* Filtro SVG para Modo Daltônico (deuteranopia) */}
+      <svg aria-hidden style={{ position: "absolute", width: 0, height: 0 }}>
+        <defs>
+          <filter id="colorblind-filter">
+            <feColorMatrix type="matrix" values="
+              0.625 0.375 0   0 0
+              0.7   0.3   0   0 0
+              0     0.3   0.7 0 0
+              0     0     0   1 0"
+            />
+          </filter>
+        </defs>
+      </svg>
 
-      {/* Menu de Acessibilidade */}
+      {/* Botão fixo na sidebar */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        title="Opções de Acessibilidade"
+        className={cn(
+          "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
+          isOpen
+            ? "bg-primary text-primary-foreground shadow-md"
+            : "hover:bg-muted text-foreground"
+        )}
+      >
+        <Accessibility className="w-5 h-5 flex-shrink-0" />
+        {sidebarOpen && <span className="font-medium">Acessibilidade</span>}
+      </button>
+
+      {/* Guia de Leitura */}
+      {options.readingGuide && (
+        <div
+          aria-hidden
+          style={{
+            position: "fixed",
+            left: 0,
+            top: guideY - 12,
+            width: "100vw",
+            height: 24,
+            background: "rgba(255, 255, 0, 0.25)",
+            borderTop: "1px solid rgba(255, 200, 0, 0.6)",
+            borderBottom: "1px solid rgba(255, 200, 0, 0.6)",
+            pointerEvents: "none",
+            zIndex: 99999,
+            transition: "top 0.05s linear",
+          }}
+        />
+      )}
+
+      {/* Painel de Acessibilidade */}
       {isOpen && (
         <div
           className="accessibility-menu"
           style={{
             position: 'fixed',
-            left: position.x > window.innerWidth / 2 ? `${position.x - 320}px` : `${position.x + 80}px`,
-            top: `${position.y}px`,
+            left: sidebarOpen ? '272px' : '88px',
+            bottom: '80px',
             zIndex: 9998,
             maxHeight: '80vh',
             overflow: 'auto',
@@ -274,7 +302,7 @@ export function AccessibilityButton() {
               {/* Informação */}
               <div className="pt-4 border-t">
                 <p className="text-xs text-muted-foreground text-center">
-                  Arraste o botão de acessibilidade para movê-lo pela tela
+                  Personalize sua experiência de navegação
                 </p>
               </div>
             </CardContent>

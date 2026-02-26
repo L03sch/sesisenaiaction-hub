@@ -120,6 +120,34 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 
+  /* Acessibilidade: Alto Contraste */
+  html.high-contrast {
+    filter: contrast(1.6) brightness(0.9);
+  }
+
+  /* Acessibilidade: Texto Grande */
+  html.large-text body {
+    font-size: 1.2em;
+  }
+  html.large-text h1, html.large-text h2, html.large-text h3,
+  html.large-text h4, html.large-text h5, html.large-text h6 {
+    font-size: 1.3em;
+  }
+
+  /* Acessibilidade: Reduzir Animações */
+  html.reduced-motion *,
+  html.reduced-motion *::before,
+  html.reduced-motion *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  /* Acessibilidade: Modo Daltônico (deuteranopia) */
+  html.colorblind-mode {
+    filter: url("#colorblind-filter");
+  }
+
   /* Invert native date/time picker icons so they stay visible in dark mode */
   .dark input[type="date"]::-webkit-calendar-picker-indicator,
   .dark input[type="datetime-local"]::-webkit-calendar-picker-indicator,

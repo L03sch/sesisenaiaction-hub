@@ -65,7 +65,6 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <>
-      <AccessibilityButton />
       <div className="min-h-screen flex w-full bg-background">
       {/* Sidebar */}
       <aside
@@ -109,6 +108,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 </button>
               );
             })}
+            <AccessibilityButton sidebarOpen={sidebarOpen} />
           </nav>
 
           {/* User & Logout */}

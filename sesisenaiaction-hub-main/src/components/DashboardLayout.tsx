@@ -55,7 +55,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   const menuItems = [
-    { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
+    { icon: LayoutDashboard, label: "Tela Inicial", path: "/dashboard" },
     { icon: ClipboardList, label: "Planos de Ação", path: "/plans" },
     { icon: Users, label: "Usuários", path: "/users" },
     { icon: MessageCircle, label: "Suporte", path: "/support" },

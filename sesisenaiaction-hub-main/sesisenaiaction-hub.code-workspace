@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"name": "sesisenaiaction-hub",
+			"path": ".."
+		},
+		{
+			"name": "plan-action-showcase",
+			"path": "../../teste-skill/plan-action-showcase"
+		}
+	],
+	"settings": {}
+}

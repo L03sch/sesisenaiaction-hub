@@ -14,7 +14,7 @@
 
 **Plan-Action** é uma **solução educacional completa** desenvolvida por **4 alunos** da **Escola SESI Senai Blumenau** como trabalho final de curso, oferecendo uma **plataforma moderna e intuitiva para gestão de planos de ação** com acesso gratuito para toda a instituição.
 
-### Desenvolvedores
+### 👨‍💻 Desenvolvedores
 <a href="https://github.com/L03sch"><img src="https://github.com/L03sch.png" width="40" height="40" style="border-radius:50%" alt="brunoL" title="L03sch" /></a>
 <a href="https://github.com/FR4NC0-11"><img src="https://github.com/FR4NC0-11.png" width="40" height="40" style="border-radius:50%" alt="jeanfranco" title="FR4NC0-11" /></a>
 <a href="https://github.com/Vhs0808"><img src="https://github.com/Vhs0808.png" width="40" height="40" style="border-radius:50%" alt="vitorH" title="Vhs0808" /></a>

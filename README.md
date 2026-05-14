@@ -2,7 +2,6 @@
 
 > **Plataforma Inteligente de Gestão de Planos de Ação**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Status: Ativo](https://img.shields.io/badge/Status-Em%20Desenvolvimento-brightgreen)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-005DB3?style=flat&logo=typescript&logoColor=white)]()
 [![React](https://img.shields.io/badge/React-61DAFB?style=flat&logo=react&logoColor=black)]()

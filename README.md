@@ -14,7 +14,9 @@
 <a href="https://github.com/ViniS4rtor"><img src="https://github.com/ViniS4rtor.png" width="40" height="40" style="border-radius:50%" alt="vinisartor" title="ViniS4rtor" /></a>
 
 ### 🧑‍🏫 Tutores
+
 <a href="https://github.com/marcioscbnu"><img src="https://github.com/marcioscbnu.png" width="40" height="40" style="border-radius:50%" alt="marcio" title="marcioscbnu" /></a>
+<a href="https://br.linkedin.com/in/arquelau-pasta"><img src="https://br.linkedin.com/in/arquelau-pasta.png" width="40" height="40" style="border-radius:50%" alt="arquelau" title="arquelau-pasta" /></a>
 
 ---
 

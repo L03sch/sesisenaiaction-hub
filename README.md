@@ -2,11 +2,21 @@
 
 > **Plataforma Inteligente de Gestão de Planos de Ação**
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Status: Ativo](https://img.shields.io/badge/Status-Em%20Desenvolvimento-brightgreen)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-005DB3?style=flat&logo=typescript&logoColor=white)]()
 [![React](https://img.shields.io/badge/React-61DAFB?style=flat&logo=react&logoColor=black)]()
 [![Java](https://img.shields.io/badge/Java-ED8B00?style=flat&logo=java&logoColor=white)]()
+
+### 👨‍💻 Desenvolvedores
+<a href="https://github.com/L03sch"><img src="https://github.com/L03sch.png" width="40" height="40" style="border-radius:50%" alt="brunoL" title="L03sch" /></a>
+<a href="https://github.com/FR4NC0-11"><img src="https://github.com/FR4NC0-11.png" width="40" height="40" style="border-radius:50%" alt="jeanfranco" title="FR4NC0-11" /></a>
+<a href="https://github.com/Vhs0808"><img src="https://github.com/Vhs0808.png" width="40" height="40" style="border-radius:50%" alt="vitorH" title="Vhs0808" /></a>
+<a href="https://github.com/ViniS4rtor"><img src="https://github.com/ViniS4rtor.png" width="40" height="40" style="border-radius:50%" alt="vinisartor" title="ViniS4rtor" /></a>
+
+### 🧑‍🏫 Tutores
+
+<a href="https://github.com/marcioscbnu"><img src="https://github.com/marcioscbnu.png" width="40" height="40" style="border-radius:50%" alt="marcio" title="marcioscbnu" /></a>
+<a href="https://br.linkedin.com/in/arquelau-pasta"><img src="https://br.linkedin.com/in/arquelau-pasta.png" width="40" height="40" style="border-radius:50%" alt="arquelau" title="arquelau-pasta" /></a>
 
 ---
 

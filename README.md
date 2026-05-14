@@ -16,7 +16,7 @@
 ### 🧑‍🏫 Tutores
 
 <a href="https://github.com/marcioscbnu"><img src="https://github.com/marcioscbnu.png" width="40" height="40" style="border-radius:50%" alt="marcio" title="marcioscbnu" /></a>
-<a href="https://br.linkedin.com/in/arquelau-pasta"><img src="https://br.linkedin.com/in/arquelau-pasta.png" width="40" height="40" style="border-radius:50%" alt="arquelau" title="arquelau-pasta" /></a>
+<a href="https://br.linkedin.com/in/arquelau-pasta"><img src="plan-action-showcase\assets\images\arquelau-pasta.jpg" width="40" height="40" style="border-radius:50%" alt="arquelau" title="arquelau-pasta" /></a>
 
 ---
 

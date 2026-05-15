@@ -6,6 +6,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-005DB3?style=flat&logo=typescript&logoColor=white)]()
 [![React](https://img.shields.io/badge/React-61DAFB?style=flat&logo=react&logoColor=black)]()
 [![Java](https://img.shields.io/badge/Java-ED8B00?style=flat&logo=java&logoColor=white)]()
+[![License: PolyForm Noncommercial](https://img.shields.io/badge/License-PolyForm_Noncommercial-red.svg)](https://polyformproject.org/licenses/noncommercial/1.0.0/)
 
 ### 👨‍💻 Desenvolvedores
 <a href="https://github.com/L03sch"><img src="https://github.com/L03sch.png" width="40" height="40" style="border-radius:50%" alt="brunoL" title="L03sch" /></a>
@@ -581,6 +582,14 @@ Agradecemos a:
 - **Status:** ✅ Ativo e em desenvolvimento contínuo
 
 ---
+## ⚖️ Licença
+
+Este projeto está sob a licença **PolyForm Noncommercial 1.0.0**.
+
+- **Permitido:** Uso pessoal, educacional e por organizações sem fins lucrativos.
+- **Proibido:** Uso comercial ou qualquer atividade que vise lucro sem autorização prévia dos autores.
+
+Para mais detalhes, consulte o arquivo [LICENSE](LICENSE) ou acesse [polyformproject.org](https://polyformproject.org/licenses/noncommercial/1.0.0/).
 
 <div align="center">
 

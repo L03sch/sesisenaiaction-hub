@@ -2,11 +2,11 @@
 
 > **Plataforma Inteligente de Gestão de Planos de Ação**
 
+[![License: PolyForm Noncommercial](https://img.shields.io/badge/License-PolyForm_Noncommercial-red.svg)](https://polyformproject.org/licenses/noncommercial/1.0.0/)
 [![Status: Ativo](https://img.shields.io/badge/Status-Em%20Desenvolvimento-brightgreen)]()
 [![TypeScript](https://img.shields.io/badge/TypeScript-005DB3?style=flat&logo=typescript&logoColor=white)]()
 [![React](https://img.shields.io/badge/React-61DAFB?style=flat&logo=react&logoColor=black)]()
 [![Java](https://img.shields.io/badge/Java-ED8B00?style=flat&logo=java&logoColor=white)]()
-[![License: PolyForm Noncommercial](https://img.shields.io/badge/License-PolyForm_Noncommercial-red.svg)](https://polyformproject.org/licenses/noncommercial/1.0.0/)
 
 ### 👨‍💻 Desenvolvedores
 <a href="https://github.com/L03sch"><img src="https://github.com/L03sch.png" width="40" height="40" style="border-radius:50%" alt="brunoL" title="L03sch" /></a>

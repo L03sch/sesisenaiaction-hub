@@ -589,7 +589,7 @@ Este projeto está sob a licença **PolyForm Noncommercial 1.0.0**.
 - **Permitido:** Uso pessoal, educacional e por organizações sem fins lucrativos.
 - **Proibido:** Uso comercial ou qualquer atividade que vise lucro sem autorização prévia dos autores.
 
-Para mais detalhes, consulte o arquivo [LICENSE](LICENSE) ou acesse [polyformproject.org](https://polyformproject.org/licenses/noncommercial/1.0.0/).
+Para mais detalhes, consulte o arquivo [LICENSE](LICENSE.md) ou acesse [polyformproject.org](https://polyformproject.org/licenses/noncommercial/1.0.0).
 
 <div align="center">
 

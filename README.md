@@ -593,10 +593,6 @@ Para mais detalhes, consulte o arquivo [LICENSE](LICENSE) ou acesse [polyformpro
 
 <div align="center">
 
-**⭐ Se este projeto foi útil, deixe uma star! ⭐**
-
-Desenvolvido com ❤️ por alunos da Escola SESI Senai Blumenau
-
 [Site](https://plan-action.com) • [Issues](https://github.com/seu-usuario/sesisenaiaction-hub/issues) • [Discussions](https://github.com/seu-usuario/sesisenaiaction-hub/discussions)
 
 </div>

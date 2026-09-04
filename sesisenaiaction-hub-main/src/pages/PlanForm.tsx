@@ -241,7 +241,7 @@ export default function PlanForm() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="title">Título *</Label>
+                <Label htmlFor="title">Título (What) :</Label>
                 <Input
                   id="title"
                   value={formData.title}
@@ -252,7 +252,7 @@ export default function PlanForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Descrição *</Label>
+                <Label htmlFor="description">Descrição :</Label>
                 <Textarea
                   id="description"
                   value={formData.description}
@@ -264,7 +264,7 @@ export default function PlanForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="objective">Objetivo *</Label>
+                <Label htmlFor="objective">Objetivo (What) :</Label>
                 <Textarea
                   id="objective"
                   value={formData.objective}
@@ -276,12 +276,12 @@ export default function PlanForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="expected_result">Resultado esperado *</Label>
+                <Label htmlFor="expected_result">Motivo (Why) :</Label>
                 <Textarea
                   id="expected_result"
                   value={formData.expected_result}
                   onChange={(e) => setFormData({ ...formData, expected_result: e.target.value })}
-                  placeholder="Qual resultado concreto deve ser alcançado?"
+                  placeholder="Qual o motivo para a realização deste plano?"
                   rows={3}
                   required
                 />
@@ -289,7 +289,7 @@ export default function PlanForm() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="where_location">Onde será realizado? *</Label>
+                  <Label htmlFor="where_location">Onde será realizado? (Where) :</Label>
                   <Input
                     id="where_location"
                     value={formData.where_location}
@@ -299,7 +299,7 @@ export default function PlanForm() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="estimated_cost">Custo estimado (R$) *</Label>
+                  <Label htmlFor="estimated_cost">Custo estimado (How Much) :</Label>
                   <Input
                     id="estimated_cost"
                     type="number"
@@ -307,14 +307,14 @@ export default function PlanForm() {
                     step="0.01"
                     value={formData.estimated_cost}
                     onChange={(e) => setFormData({ ...formData, estimated_cost: e.target.value })}
-                    placeholder="0,00"
+                    placeholder="R$0,00"
                     required
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="how_to_execute">Como será realizado? *</Label>
+                <Label htmlFor="how_to_execute">Como será realizado? (How) :</Label>
                 <Textarea
                   id="how_to_execute"
                   value={formData.how_to_execute}
@@ -327,7 +327,7 @@ export default function PlanForm() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="start_date">Data de Início *</Label>
+                  <Label htmlFor="start_date">Data de Início (When)</Label>
                   <Input
                     id="start_date"
                     type="date"
@@ -338,7 +338,7 @@ export default function PlanForm() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="end_date">Data de Término *</Label>
+                  <Label htmlFor="end_date">Data de Término (When)</Label>
                   <Input
                     id="end_date"
                     type="date"
@@ -385,7 +385,7 @@ export default function PlanForm() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Professores Participantes</CardTitle>
+              <CardTitle>Participantes (Who) </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="relative">

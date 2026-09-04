@@ -3,279 +3,93 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Plan-Action - Plataforma de gestão de Planos de Ação desenvolvida por alunos da Escola SESI Senai Blumenau. Acesso gratuito para Escola SESI.">
-    <title>Plan-Action | Projeto Educacional - Escola SESI Blumenau</title>
-    
+    <meta name="description" content="SESI SENAI Planos de Ação: organize, acompanhe e conclua planos de ação da sua equipe.">
+    <title>SESI SENAI | Planos de Ação</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/animations.css">
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="navbar-content">
-            <a href="#" id="logo-link" class="logo">
-                <span class="logo-icon">📋</span>
-                <span class="logo-text">Plan-Action</span>
+    <div class="scroll-progress" aria-hidden="true"></div>
+    <header class="navbar">
+        <div class="container navbar-content">
+            <a href="#top" class="logo" aria-label="Voltar ao início">
+                <span class="logo-mark">S</span>
+                <span><strong>SESI SENAI</strong><small>Planos de Ação</small></span>
             </a>
-            <a href="#contact" class="nav-cta contact-link">Contato</a>
+            <nav class="nav-menu" aria-label="Navegação principal">
+                <a href="#visao-geral">Visão geral</a>
+                <a href="#recursos">Recursos</a>
+                <a href="#fluxo">Como funciona</a>
+            </nav>
+            <a href="#acesso" class="nav-cta contact-link">Entrar no sistema <span aria-hidden="true">↗</span></a>
         </div>
-    </nav>
+    </header>
 
-    <!-- Hero Section -->
-    <section class="hero">
-        <div class="container hero-content">
-            <div class="hero-text">
-                <h1 class="hero-title">Plan-Action: Gestão de Planos de Ação</h1>
-                <p class="hero-subtitle">Uma plataforma inteligente e gratuita desenvolvida por alunos da Escola SESI Senai Blumenau para gestão de planos de ação. Acompanhe, priorize e execute com precisão.</p>
-                <div class="hero-cta-buttons">
-                    <button class="btn btn-primary">Acessar Plataforma</button>
-                    <button class="btn btn-secondary">Ver Documentação</button>
-                </div>
-                <p class="hero-note">✓ Acesso Gratuito • ✓ Sem Custos • ✓ Desenvolvido por Alunos SESI</p>
-            </div>
-            <div class="hero-visual">
-                <div class="hero-card">
-                    <div class="card-header">
-                        <div class="card-dot"></div>
-                        <div class="card-dot"></div>
-                        <div class="card-dot"></div>
+    <main id="top">
+        <section class="hero" id="visao-geral">
+            <div class="container hero-content">
+                <div class="hero-text reveal">
+                    <p class="eyebrow"><span></span> Plataforma SESI SENAI Blumenau</p>
+                    <h1>Planos de ação que saem do papel.</h1>
+                    <p class="hero-subtitle">O espaço de trabalho para planejar, distribuir responsabilidades e acompanhar resultados com clareza.</p>
+                    <div class="hero-cta-buttons">
+                        <a class="btn btn-primary" href="#acesso">Acessar plataforma <span aria-hidden="true">↗</span></a>
+                        <a class="btn btn-secondary" href="#recursos">Conhecer recursos <span aria-hidden="true">↓</span></a>
                     </div>
-                    <div class="card-body">
-                        <div class="mock-task">
-                            <div class="task-checkbox"></div>
-                            <div class="task-text"></div>
-                        </div>
-                        <div class="mock-task">
-                            <div class="task-checkbox"></div>
-                            <div class="task-text"></div>
-                        </div>
-                        <div class="mock-task">
-                            <div class="task-checkbox"></div>
-                            <div class="task-text"></div>
-                        </div>
-                    </div>
+                    <div class="hero-note"><span>●</span> Feito para equipes SESI SENAI <i></i> Acesso institucional</div>
                 </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Features Section -->
-    <section class="features" id="features">
-        <div class="container">
-            <h2 class="section-title">Recursos Poderosos</h2>
-            <p class="section-subtitle">Tudo que você precisa para gerenciar planos de ação com eficiência</p>
-            
-            <div class="features-grid">
-                <div class="feature-card">
-                    <div class="feature-icon">🎯</div>
-                    <h3>Metas Inteligentes</h3>
-                    <p>Defina, monitore e alcance suas metas com objetivos claros e mensuráveis.</p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">📊</div>
-                    <h3>Análise em Tempo Real</h3>
-                    <p>Visualize o progresso e identifique gargalos com dashboards interativos.</p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">👥</div>
-                    <h3>Colaboração em Equipe</h3>
-                    <p>Trabalhe junto, compartilhe responsabilidades e mantenha todos sincronizados.</p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">⏰</div>
-                    <h3>Cronograma Inteligente</h3>
-                    <p>Gerencie prazos, dependências e milestones automaticamente.</p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">🔔</div>
-                    <h3>Notificações Ativas</h3>
-                    <p>Fique atualizado com alertas personalizados e lembretes inteligentes.</p>
-                </div>
-                
-                <div class="feature-card">
-                    <div class="feature-icon">🔐</div>
-                    <h3>Segurança Enterprise</h3>
-                    <p>Seus dados protegidos com criptografia de ponta e conformidade LGPD.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- How It Works Section -->
-    <section class="how-it-works" id="how-it-works">
-        <div class="container">
-            <h2 class="section-title">Como Funciona</h2>
-            <p class="section-subtitle">Comece em 4 passos simples</p>
-            
-            <div class="steps-container">
-                <div class="step">
-                    <div class="step-number">1</div>
-                    <h3>Cadastre seu Plano</h3>
-                    <p>Crie um novo plano de ação em segundos com nossa interface intuitiva.</p>
-                </div>
-                
-                <div class="step-arrow">→</div>
-                
-                <div class="step">
-                    <div class="step-number">2</div>
-                    <h3>Defina Ações</h3>
-                    <p>Adicione tarefas, atribua responsáveis e estabeleça prazos.</p>
-                </div>
-                
-                <div class="step-arrow">→</div>
-                
-                <div class="step">
-                    <div class="step-number">3</div>
-                    <h3>Acompanhe o Progresso</h3>
-                    <p>Monitore em tempo real com dashboards visuais e relatórios completos.</p>
-                </div>
-                
-                <div class="step-arrow">→</div>
-                
-                <div class="step">
-                    <div class="step-number">4</div>
-                    <h3>Alcance Resultados</h3>
-                    <p>Finalize com sucesso e analise aprendizados para próximos planos.</p>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Acesso Gratuito Section -->
-    <section class="pricing" id="about-school">
-        <div class="container">
-            <h2 class="section-title">Acesso Gratuito para Escola SESI</h2>
-            <p class="section-subtitle">Uma solução desenvolvida especialmente para Escola SESI Blumenau</p>
-            
-            <div class="pricing-grid">
-                <div class="pricing-card featured">
-                    <div class="badge">Acesso Completo</div>
-                    <h3>Plan-Action Escola SESI</h3>
-                    <p class="price"><span class="currency">R$</span><span class="amount">0</span></p>
-                    <p class="price-desc">Sem Custos • Acesso Ilimitado</p>
-                    <ul class="features-list">
-                        <li>✓ Planos de Ação Ilimitados</li>
-                        <li>✓ Usuários Ilimitados</li>
-                        <li>✓ Dashboard Completo com Análises</li>
-                        <li>✓ Relatórios Detalhados</li>
-                        <li>✓ Colaboração em Equipe</li>
-                        <li>✓ Suporte Técnico</li>
-                    </ul>
-                    <button class="btn btn-primary">Acessar Agora</button>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- About Developers Section -->
-    <section class="testimonials" id="developers">
-        <div class="container">
-            <h2 class="section-title">Desenvolvido por Alunos SESI</h2>
-            <p class="section-subtitle">Um projeto criado com dedicação pelos alunos da Escola SESI Senai Blumenau</p>
-            
-            <div class="testimonials-grid">
-                <div class="testimonial-card">
-                    <div class="stars">👨‍💻</div>
-                    <p class="testimonial-text">Um projeto educacional desenvolvido como trabalho colaborativo, aplicando conceitos de programação, design e gestão de projetos aprendidos em sala de aula.</p>
-                    <div class="testimonial-author">
-                        <div class="author-avatar">ES</div>
-                        <div>
-                            <p class="author-name">Escola SESI Senai</p>
-                            <p class="author-role">Blumenau, Santa Catarina</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="testimonial-card">
-                    <div class="stars">🎓</div>
-                    <p class="testimonial-text">Desenvolvido por 4 alunos talentosos como projeto final, demonstrando as habilidades em desenvolvimento web, user experience e gestão de equipes técnicas.</p>
-                    <div class="testimonial-author">
-                        <div class="author-avatar">👨‍🎓</div>
-                        <div>
-                            <p class="author-name">Equipe de Desenvolvimento</p>
-                            <p class="author-role">4 Alunos SESI</p>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="testimonial-card">
-                    <div class="stars">🚀</div>
-                    <p class="testimonial-text">O Plan-Action reflete o compromisso com excelência educacional, inovação e desenvolvimento de soluções que agregam valor real para a comunidade SESI.</p>
-                    <div class="testimonial-author">
-                        <div class="author-avatar">🌟</div>
-                        <div>
-                            <p class="author-name">Missão</p>
-                            <p class="author-role">Educação e Inovação</p>
+                <div class="hero-visual reveal reveal-delay" aria-label="Prévia do painel de controle">
+                    <div class="dashboard-window">
+                        <div class="dashboard-body">
+                            <aside class="mock-sidebar">
+                                <div class="mock-brand"><span class="mini-mark">S</span><span>SESI SENAI<small>Planos de Ação</small></span></div>
+                                <div class="mock-nav active"><span>▦</span> Tela Inicial</div>
+                                <div class="mock-nav"><span>▣</span> Planos de Ação</div>
+                                <div class="mock-nav"><span>♙</span> Usuários</div>
+                                <div class="mock-nav"><span>?</span> Suporte</div>
+                                <div class="mock-nav"><span>♿</span> Acessibilidade</div>
+                                <div class="mock-sidebar-bottom"><span>♙</span> Vinicius Sartor <b>◔</b><br><span>↪</span> Sair</div>
+                            </aside>
+                            <div class="mock-main">
+                                <div class="mock-top"><span>☰</span></div>
+                                <div class="mock-heading"><div><small>VISÃO GERAL</small><h3>Tela Inicial</h3><p>Visão geral dos planos de ação</p></div><button>Novo Plano <b>+</b></button></div>
+                                <div class="stat-grid">
+                                    <div class="stat"><span class="stat-icon blue">▣</span><div><small>Total de Planos</small><strong>5</strong></div></div>
+                                    <div class="stat"><span class="stat-icon blue">◷</span><div><small>Planos Ativos</small><strong>3</strong></div></div>
+                                    <div class="stat"><span class="stat-icon green">✓</span><div><small>Concluídos</small><strong>1</strong></div></div>
+                                    <div class="stat"><span class="stat-icon blue">♙</span><div><small>Professores</small><strong>12</strong></div></div>
+                                </div>
+                                <div class="recent"><div class="recent-title"><strong>Planos Recentes</strong><span>Ver todos</span></div><div class="plan-line"><div><b>Atualização das pastas</b><span><label class="status-progress">Em Andamento</label><label>Urgente</label></span></div><i>◉</i></div><div class="plan-line"><div><b>Reforma Banheiro feminino</b><span><label class="status-cancel">Cancelado</label><label>Baixa</label></span></div><i>◉</i></div><div class="plan-line"><div><b>Prova-Passe</b><span><label>Planejamento</label><label>Alta</label></span></div><i>◉</i></div><div class="plan-line"><div><b>Atualização na cantina</b><span><label class="status-done">Concluído</label><label>Alta</label></span></div><i>◉</i></div><div class="plan-line"><div><b>Melhoria no Processo de Avaliação</b><span><label class="status-progress">Em Andamento</label><label>Média</label></span></div><i>◉</i></div></div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
+            <div class="hero-grid" aria-hidden="true"></div>
+        </section>
 
-    <!-- CTA Section -->
-    <section class="cta" id="contact">
-        <div class="container">
-            <h2>Comece a Usar o Plan-Action Agora</h2>
-            <p>Acesso gratuito e imediato para toda a Escola SESI Blumenau</p>
-            <button class="btn btn-primary btn-large">Acessar a Plataforma</button>
-        </div>
-    </section>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-section">
-                    <h4>Plan-Action</h4>
-                    <p>Plataforma gratuita de gestão de Planos de Ação desenvolvida por alunos da Escola SESI Senai Blumenau para Escola SESI.</p>
-                </div>
-                
-                <div class="footer-section">
-                    <h5>Projeto</h5>
-                    <ul>
-                        <li><a href="#features">Recursos</a></li>
-                        <li><a href="#developers">Desenvolvedores</a></li>
-                        <li><a href="#">Documentação</a></li>
-                    </ul>
-                </div>
-                
-                <div class="footer-section">
-                    <h5>Sobre</h5>
-                    <ul>
-                        <li><a href="#">Escola SESI</a></li>
-                        <li><a href="#">Senai Blumenau</a></li>
-                        <li><a href="#">Contato</a></li>
-                        <li><a href="#">Suporte</a></li>
-                    </ul>
-                </div>
-                
-                <div class="footer-section">
-                    <h5>Informações</h5>
-                    <ul>
-                        <li><a href="#">Privacidade</a></li>
-                        <li><a href="#">Termos de Uso</a></li>
-                        <li><a href="#">Segurança</a></li>
-                        <li><a href="#">Licença</a></li>
-                    </ul>
+        <section class="features section-band" id="recursos">
+            <div class="container">
+                <div class="section-intro reveal"><p class="eyebrow"><span></span> Tudo em um só lugar</p><h2>Do primeiro rascunho<br><i>ao resultado final.</i></h2><p>Uma experiência simples para que cada pessoa saiba o que precisa fazer, quando e por quê.</p></div>
+                <div class="features-grid">
+                    <article class="feature-card reveal"><span class="feature-icon blue">▣</span><h3>Planos de Ação</h3><p>Crie planos com objetivos, ações, responsáveis, prazos e status em um fluxo organizado.</p><a href="#fluxo">Explorar fluxo <span>→</span></a></article>
+                    <article class="feature-card reveal reveal-delay"><span class="feature-icon green">◷</span><h3>Acompanhamento real</h3><p>Tenha uma visão rápida do que está em planejamento, em andamento ou concluído.</p><a href="#visao-geral">Ver o painel <span>→</span></a></article>
+                    <article class="feature-card reveal reveal-delay-2"><span class="feature-icon orange">♙</span><h3>Equipe conectada</h3><p>Distribua responsabilidades entre professores, coordenação e administradores.</p><a href="#acesso">Conhecer o acesso <span>→</span></a></article>
                 </div>
             </div>
-            
-            <div class="footer-bottom">
-                <p>&copy; 2025 Plan-Action. Desenvolvido por alunos da Escola SESI Senai Blumenau.</p>
-                <div class="social-links">
-                    <a href="#">Sobre o Projeto</a>
-                    <a href="#">Documentação</a>
-                    <a href="#">Suporte</a>
-                </div>
-            </div>
-        </div>
-    </footer>
+        </section>
 
+        <section class="workflow" id="fluxo">
+            <div class="container workflow-content"><div class="workflow-copy reveal"><p class="eyebrow"><span></span> Um fluxo que funciona</p><h2>Clareza para cada próxima ação.</h2><p>O sistema acompanha o jeito como a equipe trabalha: começa no objetivo, ganha responsáveis e termina com resultado mensurável.</p><a class="text-link" href="#acesso">Começar agora <span>↗</span></a></div><div class="steps reveal reveal-delay"><div class="step"><b>01</b><div><h3>Cadastre o plano</h3><p>Dê um nome ao objetivo e registre o contexto.</p></div></div><div class="step"><b>02</b><div><h3>Defina as ações</h3><p>Organize tarefas, responsáveis e prazos.</p></div></div><div class="step"><b>03</b><div><h3>Acompanhe o avanço</h3><p>Atualize o status e mantenha a equipe alinhada.</p></div></div></div></div>
+        </section>
+
+        <section class="access" id="acesso"><div class="container access-content reveal"><div><p class="eyebrow"><span></span> Ambiente institucional</p><h2>Pronto para organizar o próximo plano?</h2><p>Entre no sistema SESI SENAI e encontre tudo o que sua equipe precisa para transformar intenção em ação.</p></div><a class="btn btn-light" href="http://localhost:5173/">Entrar no sistema <span aria-hidden="true">↗</span></a></div></section>
+    </main>
+
+    <footer class="footer"><div class="container footer-content"><div class="footer-brand"><span class="logo-mark">S</span><div><strong>PLAN-ACTION</strong><p>Sistema de Gestão de Planos de Ação</p></div></div><p>Projeto educacional desenvolvido por alunos da Escola SESI SENAI Blumenau.</p><span class="footer-year">© 2026</span></div></footer>
     <script src="js/script.js"></script>
 </body>
 </html>

@@ -28,6 +28,10 @@ interface Plan {
   title: string;
   description: string;
   objective: string;
+  expected_result: string;
+  where_location: string;
+  how_to_execute: string;
+  estimated_cost: number;
   start_date: string;
   end_date: string;
   status: string;
@@ -280,6 +284,32 @@ export default function PlanDetails() {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground whitespace-pre-wrap">{plan.description}</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Execução 5W2H</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-5 md:grid-cols-2">
+            <div>
+              <p className="text-sm text-muted-foreground">Onde</p>
+              <p className="font-medium whitespace-pre-wrap">{plan.where_location || "Não informado"}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Quanto</p>
+              <p className="font-medium">
+                {Number(plan.estimated_cost || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Como</p>
+              <p className="text-muted-foreground whitespace-pre-wrap">{plan.how_to_execute || "Não informado"}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Resultado esperado</p>
+              <p className="text-muted-foreground whitespace-pre-wrap">{plan.expected_result || "Não informado"}</p>
+            </div>
           </CardContent>
         </Card>
 

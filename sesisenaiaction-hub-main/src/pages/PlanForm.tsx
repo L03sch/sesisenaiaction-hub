@@ -34,6 +34,10 @@ export default function PlanForm() {
     title: "",
     description: "",
     objective: "",
+    expected_result: "",
+    where_location: "",
+    how_to_execute: "",
+    estimated_cost: "0",
     start_date: "",
     end_date: "",
     status: "planning",
@@ -87,6 +91,10 @@ export default function PlanForm() {
           title: plan.title,
           description: plan.description,
           objective: plan.objective,
+          expected_result: plan.expected_result || "",
+          where_location: plan.where_location || "",
+          how_to_execute: plan.how_to_execute || "",
+          estimated_cost: String(plan.estimated_cost ?? 0),
           start_date: plan.start_date,
           end_date: plan.end_date,
           status: plan.status,
@@ -134,9 +142,21 @@ export default function PlanForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.title || !formData.description || !formData.objective || 
-        !formData.start_date || !formData.end_date) {
+    if (!formData.title || !formData.description || !formData.objective ||
+        !formData.expected_result || !formData.where_location ||
+        !formData.how_to_execute || !formData.start_date || !formData.end_date) {
       toast.error("Preencha todos os campos obrigatórios");
+      return;
+    }
+
+    if (formData.end_date < formData.start_date) {
+      toast.error("A data de término deve ser posterior à data de início");
+      return;
+    }
+
+    const estimatedCost = Number(formData.estimated_cost);
+    if (!Number.isFinite(estimatedCost) || estimatedCost < 0) {
+      toast.error("Informe um custo estimado válido");
       return;
     }
 
@@ -151,7 +171,7 @@ export default function PlanForm() {
       if (isEditing) {
         const { error } = await supabase
           .from("action_plans")
-          .update(formData)
+          .update({ ...formData, estimated_cost: estimatedCost })
           .eq("id", id);
 
         if (error) throw error;
@@ -160,6 +180,7 @@ export default function PlanForm() {
           .from("action_plans")
           .insert({
             ...formData,
+            estimated_cost: estimatedCost,
             created_by: session.user.id,
           })
           .select()
@@ -250,6 +271,56 @@ export default function PlanForm() {
                   onChange={(e) => setFormData({ ...formData, objective: e.target.value })}
                   placeholder="Qual o objetivo deste plano?"
                   rows={3}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="expected_result">Resultado esperado *</Label>
+                <Textarea
+                  id="expected_result"
+                  value={formData.expected_result}
+                  onChange={(e) => setFormData({ ...formData, expected_result: e.target.value })}
+                  placeholder="Qual resultado concreto deve ser alcançado?"
+                  rows={3}
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="where_location">Onde será realizado? *</Label>
+                  <Input
+                    id="where_location"
+                    value={formData.where_location}
+                    onChange={(e) => setFormData({ ...formData, where_location: e.target.value })}
+                    placeholder="Ex: Unidade SESI Osasco"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="estimated_cost">Custo estimado (R$) *</Label>
+                  <Input
+                    id="estimated_cost"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.estimated_cost}
+                    onChange={(e) => setFormData({ ...formData, estimated_cost: e.target.value })}
+                    placeholder="0,00"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="how_to_execute">Como será realizado? *</Label>
+                <Textarea
+                  id="how_to_execute"
+                  value={formData.how_to_execute}
+                  onChange={(e) => setFormData({ ...formData, how_to_execute: e.target.value })}
+                  placeholder="Descreva as etapas, recursos e abordagem da execução"
+                  rows={4}
                   required
                 />
               </div>

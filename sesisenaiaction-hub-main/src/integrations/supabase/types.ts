@@ -20,12 +20,16 @@ export type Database = {
           created_by: string
           description: string
           end_date: string
+          estimated_cost: number
+          expected_result: string
+          how_to_execute: string
           id: string
           objective: string
           priority: string
           start_date: string
           status: string
           title: string
+          where_location: string
           updated_at: string | null
         }
         Insert: {
@@ -33,12 +37,16 @@ export type Database = {
           created_by: string
           description: string
           end_date: string
+          estimated_cost?: number
+          expected_result?: string
+          how_to_execute?: string
           id?: string
           objective: string
           priority?: string
           start_date: string
           status?: string
           title: string
+          where_location?: string
           updated_at?: string | null
         }
         Update: {
@@ -46,12 +54,16 @@ export type Database = {
           created_by?: string
           description?: string
           end_date?: string
+          estimated_cost?: number
+          expected_result?: string
+          how_to_execute?: string
           id?: string
           objective?: string
           priority?: string
           start_date?: string
           status?: string
           title?: string
+          where_location?: string
           updated_at?: string | null
         }
         Relationships: [

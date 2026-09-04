@@ -1,0 +1,5 @@
+ALTER TABLE public.action_plans
+  ADD COLUMN IF NOT EXISTS where_location TEXT NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS how_to_execute TEXT NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS expected_result TEXT NOT NULL DEFAULT '',
+  ADD COLUMN IF NOT EXISTS estimated_cost NUMERIC(12, 2) NOT NULL DEFAULT 0 CHECK (estimated_cost >= 0);

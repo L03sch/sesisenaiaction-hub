@@ -18,16 +18,19 @@ Este diretório contém as migrações do banco de dados do projeto SESI SENAI A
 - Adiciona campos `phone` e `school` na tabela `profiles`
 
 ### `20251022000001` - Função de Exclusão de Usuário
-- Cria função `delete_user_completely(user_id UUID)`
-- Permite exclusão completa de usuários (profiles + auth.users)
-- Restrição: Apenas administradores podem executar
-- Proteção: Não permite auto-exclusão
+- Migração histórica, posteriormente substituída pela Edge Function administrativa
 
 ### `20251022000002` - Storage para Avatares
 - Cria bucket `avatars` no Supabase Storage
 - Configura políticas RLS para upload/atualização/exclusão
 - Limite de 5MB por arquivo
 - Tipos permitidos: PNG, JPEG, JPG, GIF, WEBP
+
+### `20260911000001` e `20260911000002` - Administrador e Gestão de Usuários
+- Protege a identificação do administrador absoluto
+- Remove as antigas RPCs que alteravam diretamente o schema `auth`
+- Delega criação e exclusão às Edge Functions e à Auth Admin API
+- Impede senha administrativa fixa dentro das migrações
 
 ## 🚀 Como Aplicar Migrações
 
@@ -63,10 +66,10 @@ FROM information_schema.tables
 WHERE table_schema = 'public'
 ORDER BY table_name;
 
--- Verificar se a função existe
-SELECT proname 
-FROM pg_proc 
-WHERE proname = 'delete_user_completely';
+-- Verificar se a função de autorização existe
+SELECT proname
+FROM pg_proc
+WHERE proname = 'is_absolute_admin';
 
 -- Verificar se o bucket existe
 SELECT * 
@@ -79,7 +82,7 @@ WHERE id = 'avatars';
 Após aplicar todas as migrações, você deve ter:
 
 ✅ Tabelas: `profiles`, `action_plans`, `plan_assignments`  
-✅ Função: `delete_user_completely(UUID)`  
+✅ Edge Functions: `create-user-account` e `delete-user-completely`
 ✅ Storage Bucket: `avatars`  
 ✅ Políticas RLS configuradas para todas as tabelas  
 ✅ Triggers automáticos funcionando  

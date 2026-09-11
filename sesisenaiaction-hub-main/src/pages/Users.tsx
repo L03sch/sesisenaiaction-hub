@@ -39,6 +39,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ABSOLUTE_ADMIN_EMAIL } from "@/lib/systemAdmin";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 
 interface UserProfile {
   id: string;
@@ -46,6 +47,15 @@ interface UserProfile {
   email: string;
   role: string;
   department: string | null;
+}
+
+async function getFunctionErrorMessage(error: unknown) {
+  if (error instanceof FunctionsHttpError) {
+    const payload = await error.context.json().catch(() => null);
+    if (payload && typeof payload.error === "string") return payload.error;
+  }
+
+  return error instanceof Error ? error.message : "Ocorreu um erro inesperado";
 }
 
 export default function Users() {
@@ -145,19 +155,12 @@ export default function Users() {
         return;
       }
 
-      // Chamar a função do banco de dados que faz a exclusão completa
-      const { data, error } = await (supabase as any).rpc("delete_user_completely", {
-        user_id: userId,
+      // A Edge Function usa a API administrativa do Supabase Auth no servidor.
+      const { error } = await supabase.functions.invoke("delete-user-completely", {
+        body: { user_id: userId },
       });
 
       if (error) {
-        console.error("Erro completo ao excluir usuário:", error);
-        console.error("Detalhes do erro:", {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code
-        });
         throw error;
       }
 
@@ -166,24 +169,9 @@ export default function Users() {
       setFilteredProfessors(filteredProfessors.filter((p) => p.id !== userId));
       
       toast.success(`Usuário ${userName} excluído permanentemente do sistema!`);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Erro capturado:", error);
-      
-      // Mostrar mensagem de erro mais específica
-      const errorMessage = error.message || error.toString();
-      console.error("Mensagem de erro:", errorMessage);
-      
-      if (errorMessage?.includes('administradores')) {
-        toast.error("Apenas administradores podem excluir usuários");
-      } else if (errorMessage?.includes('próprio acesso')) {
-        toast.error("Você não pode excluir seu próprio acesso!");
-      } else if (errorMessage?.includes('function') && errorMessage?.includes('does not exist')) {
-        toast.error("Função de exclusão não encontrada no banco de dados. Execute o SQL de migração.");
-      } else if (error.code) {
-        toast.error(`Erro ${error.code}: ${errorMessage}`);
-      } else {
-        toast.error(`Erro: ${errorMessage}`);
-      }
+      toast.error(await getFunctionErrorMessage(error));
     } finally {
       setDeletingId(null);
     }
@@ -197,23 +185,29 @@ export default function Users() {
     }
 
     setCreating(true);
-    const { error } = await supabase.rpc("create_user_account", {
-      user_email: newUser.email,
-      user_password: newUser.password,
-      user_full_name: newUser.fullName,
-      user_role: newUser.role,
-      user_department: newUser.department || null,
-    });
+    try {
+      const { error } = await supabase.functions.invoke("create-user-account", {
+        body: {
+          user_email: newUser.email,
+          user_password: newUser.password,
+          user_full_name: newUser.fullName,
+          user_role: newUser.role,
+          user_department: newUser.department || null,
+        },
+      });
 
-    if (error) {
-      toast.error(error.message);
-    } else {
+      if (error) throw error;
+
       toast.success("Usuário cadastrado com sucesso");
       setNewUser({ fullName: "", email: "", password: "", role: "professor", department: "" });
       const { data } = await supabase.from("profiles").select("*").order("full_name");
       if (data) setProfessors(data);
+    } catch (error: unknown) {
+      console.error("Erro ao cadastrar usuário:", error);
+      toast.error(await getFunctionErrorMessage(error));
+    } finally {
+      setCreating(false);
     }
-    setCreating(false);
   };
 
   return (

@@ -13,7 +13,10 @@ supabase/
 │   ├── 20251002231310_*.sql            # Correção de segurança
 │   ├── 20251022000000_*.sql            # Campos phone/school
 │   ├── 20251022000001_*.sql            # Função de exclusão
-│   └── 20251022000002_*.sql            # Storage de avatares
+│   └── 20260911000002_*.sql            # Gestão segura de usuários
+├── functions/
+│   ├── create-user-account/             # Cadastro via Auth Admin API
+│   └── delete-user-completely/          # Exclusão via Auth Admin API
 └── README.md                            # Este arquivo
 ```
 
@@ -41,8 +44,8 @@ Execute no SQL Editor:
 SELECT table_name FROM information_schema.tables 
 WHERE table_schema = 'public' ORDER BY table_name;
 
--- Verificar função de exclusão
-SELECT proname FROM pg_proc WHERE proname = 'delete_user_completely';
+-- Verificar a função de autorização
+SELECT proname FROM pg_proc WHERE proname = 'is_absolute_admin';
 
 -- Verificar bucket de avatares
 SELECT * FROM storage.buckets WHERE id = 'avatars';
@@ -60,7 +63,8 @@ Após o setup, você terá:
 ### Funções
 - ✅ `handle_updated_at()` - Atualiza timestamp automaticamente
 - ✅ `handle_new_user()` - Cria perfil ao registrar usuário
-- ✅ `delete_user_completely(UUID)` - Exclusão completa de usuário
+- ✅ `create-user-account` - Cadastro seguro pela Auth Admin API
+- ✅ `delete-user-completely` - Exclusão segura pela Auth Admin API
 
 ### Storage
 - ✅ Bucket `avatars` - Armazenamento de fotos de perfil
@@ -89,8 +93,9 @@ VITE_SUPABASE_PUBLISHABLE_KEY=sua-chave-publica
 
 ## 🛠️ Troubleshooting
 
-### Erro: "function does not exist"
-- Execute a migração `20251022000001_*.sql` novamente
+### Erro: "Failed to send a request to the Edge Function"
+- Confirme que as duas funções em `supabase/functions` foram implantadas
+- Confirme que o usuário está autenticado antes de chamar a função
 
 ### Erro: "Bucket not found"
 - Execute a migração `20251022000002_*.sql` novamente

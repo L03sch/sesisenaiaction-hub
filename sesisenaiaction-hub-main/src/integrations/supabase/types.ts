@@ -153,22 +153,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      create_user_account: {
-        Args: {
-          user_department?: string | null
-          user_email: string
-          user_full_name: string
-          user_password: string
-          user_role: string
-        }
-        Returns: string
-      }
-      delete_user_completely: {
-        Args: {
-          user_id: string
-        }
-        Returns: undefined
-      }
       is_absolute_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean

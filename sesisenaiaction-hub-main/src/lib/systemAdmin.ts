@@ -1,0 +1,1 @@
+export const ABSOLUTE_ADMIN_EMAIL = "Administrador.plan@gmail.com";

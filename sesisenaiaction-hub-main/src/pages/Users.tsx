@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -28,6 +29,16 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { ABSOLUTE_ADMIN_EMAIL } from "@/lib/systemAdmin";
 
 interface UserProfile {
   id: string;
@@ -44,8 +55,16 @@ export default function Users() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
-  const [currentUserRole, setCurrentUserRole] = useState<string>("");
+  const [currentUserEmail, setCurrentUserEmail] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+  const [newUser, setNewUser] = useState({
+    fullName: "",
+    email: "",
+    password: "",
+    role: "professor",
+    department: "",
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -54,17 +73,7 @@ export default function Users() {
         navigate("/auth");
         return;
       }
-
-      // Buscar o perfil do usuário atual
-      const { data: currentProfile } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", session.user.id)
-        .single();
-
-      if (currentProfile) {
-        setCurrentUserRole(currentProfile.role);
-      }
+      setCurrentUserEmail(session.user.email || "");
 
       const { data } = await supabase
         .from("profiles")
@@ -100,6 +109,8 @@ export default function Users() {
     );
   }, [search, roleFilter, professors]);
 
+  const isAbsoluteAdmin = currentUserEmail.toLowerCase() === ABSOLUTE_ADMIN_EMAIL.toLowerCase();
+
   const getRoleLabel = (role: string) => {
     const labels = {
       admin: "Administrador",
@@ -119,6 +130,11 @@ export default function Users() {
   };
 
   const handleDeleteUser = async (userId: string, userName: string) => {
+    if (!isAbsoluteAdmin) {
+      toast.error("Apenas o Administrador pode excluir usuários");
+      return;
+    }
+
     setDeletingId(userId);
     try {
       // Verificar se o usuário não está tentando excluir a si mesmo
@@ -173,12 +189,85 @@ export default function Users() {
     }
   };
 
+  const handleCreateUser = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!newUser.fullName || !newUser.email || !newUser.password) {
+      toast.error("Preencha nome, email e senha");
+      return;
+    }
+
+    setCreating(true);
+    const { error } = await supabase.rpc("create_user_account", {
+      user_email: newUser.email,
+      user_password: newUser.password,
+      user_full_name: newUser.fullName,
+      user_role: newUser.role,
+      user_department: newUser.department || null,
+    });
+
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Usuário cadastrado com sucesso");
+      setNewUser({ fullName: "", email: "", password: "", role: "professor", department: "" });
+      const { data } = await supabase.from("profiles").select("*").order("full_name");
+      if (data) setProfessors(data);
+    }
+    setCreating(false);
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Usuários</h1>
-          <p className="text-muted-foreground">Visualize todos os usuários do sistema</p>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Usuários</h1>
+            <p className="text-muted-foreground">Visualize todos os usuários do sistema</p>
+          </div>
+          {isAbsoluteAdmin && (
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button>Cadastrar usuário</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Cadastrar usuário</DialogTitle>
+                  <DialogDescription>Crie um acesso para professor ou coordenador.</DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleCreateUser} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="new-user-name">Nome completo</Label>
+                    <Input id="new-user-name" value={newUser.fullName} onChange={(event) => setNewUser({ ...newUser, fullName: event.target.value })} disabled={creating} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-user-email">Email</Label>
+                    <Input id="new-user-email" type="email" value={newUser.email} onChange={(event) => setNewUser({ ...newUser, email: event.target.value })} disabled={creating} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-user-password">Senha</Label>
+                    <Input id="new-user-password" type="password" minLength={6} value={newUser.password} onChange={(event) => setNewUser({ ...newUser, password: event.target.value })} disabled={creating} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-user-role">Função</Label>
+                    <Select value={newUser.role} onValueChange={(role) => setNewUser({ ...newUser, role })} disabled={creating}>
+                      <SelectTrigger id="new-user-role"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="professor">Professor</SelectItem>
+                        <SelectItem value="coordenador">Coordenador</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-user-department">Departamento (opcional)</Label>
+                    <Input id="new-user-department" value={newUser.department} onChange={(event) => setNewUser({ ...newUser, department: event.target.value })} disabled={creating} />
+                  </div>
+                  <DialogFooter>
+                    <Button type="submit" disabled={creating}>{creating ? "Cadastrando..." : "Cadastrar"}</Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
 
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
@@ -238,7 +327,7 @@ export default function Users() {
                       <Badge className={getRoleColor(prof.role)}>
                         {getRoleLabel(prof.role)}
                       </Badge>
-                      {currentUserRole === "admin" && (
+                      {isAbsoluteAdmin && prof.email.toLowerCase() !== ABSOLUTE_ADMIN_EMAIL.toLowerCase() && (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button

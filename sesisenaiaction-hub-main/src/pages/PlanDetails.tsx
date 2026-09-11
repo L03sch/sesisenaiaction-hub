@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Edit, Calendar, Target, Users, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { getActionPlanCategoryLabel } from "@/lib/actionPlanCategories";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +37,7 @@ interface Plan {
   end_date: string;
   status: string;
   priority: string;
+  category: string | null;
   created_at: string;
 }
 
@@ -217,6 +219,9 @@ export default function PlanDetails() {
           </Badge>
           <Badge variant="outline">
             Prioridade: {getPriorityLabel(plan.priority)}
+          </Badge>
+          <Badge variant="secondary">
+            Área: {getActionPlanCategoryLabel(plan.category)}
           </Badge>
         </div>
 

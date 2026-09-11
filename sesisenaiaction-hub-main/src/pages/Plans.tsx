@@ -6,10 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Search, Eye, Calendar } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { ACTION_PLAN_CATEGORIES, getActionPlanCategoryLabel } from "@/lib/actionPlanCategories";
 
 interface Plan {
   id: string;
@@ -19,6 +21,7 @@ interface Plan {
   priority: string;
   start_date: string;
   end_date: string;
+  category: string | null;
 }
 
 export default function Plans() {
@@ -27,6 +30,7 @@ export default function Plans() {
   const [filteredPlans, setFilteredPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [userRole, setUserRole] = useState<string>("");
 
   useEffect(() => {
@@ -61,17 +65,18 @@ export default function Plans() {
   }, [navigate]);
 
   useEffect(() => {
-    if (search) {
+    if (search || categoryFilter !== "all") {
       setFilteredPlans(
         plans.filter((plan) =>
-          plan.title.toLowerCase().includes(search.toLowerCase()) ||
-          plan.description.toLowerCase().includes(search.toLowerCase())
+          (!search || plan.title.toLowerCase().includes(search.toLowerCase()) ||
+            plan.description.toLowerCase().includes(search.toLowerCase())) &&
+          (categoryFilter === "all" || plan.category === categoryFilter)
         )
       );
     } else {
       setFilteredPlans(plans);
     }
-  }, [search, plans]);
+  }, [search, categoryFilter, plans]);
 
   const canCreatePlan = ["admin", "coordenador"].includes(userRole);
 
@@ -121,14 +126,29 @@ export default function Plans() {
           )}
         </div>
 
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground dark:text-white w-4 h-4" />
-          <Input
-            placeholder="Buscar planos..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
-          />
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground dark:text-white w-4 h-4" />
+            <Input
+              placeholder="Buscar planos..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="sm:w-64">
+              <SelectValue placeholder="Filtrar por área" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as áreas</SelectItem>
+              {ACTION_PLAN_CATEGORIES.map((category) => (
+                <SelectItem key={category.value} value={category.value}>
+                  {category.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {loading ? (
@@ -141,7 +161,7 @@ export default function Plans() {
           <Card>
             <CardContent className="py-16 text-center">
               <p className="text-muted-foreground">
-                {search ? "Nenhum plano encontrado" : "Nenhum plano cadastrado ainda"}
+                {search || categoryFilter !== "all" ? "Nenhum plano encontrado" : "Nenhum plano cadastrado ainda"}
               </p>
             </CardContent>
           </Card>
@@ -169,6 +189,9 @@ export default function Plans() {
                     </Badge>
                     <Badge variant="outline">
                       {getPriorityLabel(plan.priority)}
+                    </Badge>
+                    <Badge variant="secondary">
+                      {getActionPlanCategoryLabel(plan.category)}
                     </Badge>
                   </div>
 

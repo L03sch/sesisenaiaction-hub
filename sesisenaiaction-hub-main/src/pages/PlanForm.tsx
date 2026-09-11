@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { ArrowLeft, Loader2, Save, Search } from "lucide-react";
 import { format } from "date-fns";
+import { ACTION_PLAN_CATEGORIES } from "@/lib/actionPlanCategories";
 
 interface Professor {
   id: string;
@@ -42,6 +43,7 @@ export default function PlanForm() {
     end_date: "",
     status: "planning",
     priority: "medium",
+    category: "",
   });
 
   useEffect(() => {
@@ -99,6 +101,7 @@ export default function PlanForm() {
           end_date: plan.end_date,
           status: plan.status,
           priority: plan.priority,
+          category: plan.category || "",
         });
       }
 
@@ -142,7 +145,7 @@ export default function PlanForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.title || !formData.description || !formData.objective ||
+    if (!formData.title || !formData.description || !formData.objective || !formData.category ||
         !formData.expected_result || !formData.where_location ||
         !formData.how_to_execute || !formData.start_date || !formData.end_date) {
       toast.error("Preencha todos os campos obrigatórios");
@@ -350,6 +353,21 @@ export default function PlanForm() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="category">Área responsável</Label>
+                  <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                    <SelectTrigger id="category">
+                      <SelectValue placeholder="Selecione uma área" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ACTION_PLAN_CATEGORIES.map((category) => (
+                        <SelectItem key={category.value} value={category.value}>
+                          {category.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="status">Status</Label>
                   <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v })}>

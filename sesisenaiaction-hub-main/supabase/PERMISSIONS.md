@@ -59,3 +59,30 @@ geração nativa de UUID. Não há conexão com o projeto remoto nem dados reais
 
 O workflow `.github/workflows/permissions.yml`, na raiz do repositório, executa os testes, build e TypeScript
 em cada PR. Não implanta alterações no Supabase.
+
+## Implantação remota verificada em 01/10/2026
+
+Projeto `Plan-Action` (`inlbptawboswnwdqlnlm`), ativo:
+
+- Aplicadas as migrações `add_5w2h_fields` (20261001145933),
+  `add_action_plan_category` (20261001145943) e
+  `harden_action_hub_permissions` (20261001145957).
+- Publicadas as duas Edge Functions na versão 3, com `verify_jwt = true`.
+- Teste transacional remoto passou para acesso de professor, coordenador,
+  administrador e visitante, bloqueio de alteração de função e autoria,
+  edição do próprio perfil e restrição de exclusão de criador. Ao final,
+  `ROLLBACK` preservou os dois perfis administrativos existentes; nenhum plano
+  ou atribuição de teste permaneceu no banco. Não foram usados logins reais.
+- API verificada: schema `private` não exposto (`406/PGRST106`), perfis negados
+  sem login (`401`) e funções administrativas negadas sem JWT (`401`).
+- Advisors sem avisos de performance. Avisos de segurança restantes:
+  descoberta do schema GraphQL por usuários autenticados (acesso aos registros
+  continua sujeito a RLS) e proteção contra senhas vazadas desativada.
+- `.env` alinhado ao projeto acima, com chave pública publicável. O frontend
+  anteriormente apontava para outro projeto. Ambientes de produção com
+  variáveis próprias devem atualizar os três valores `VITE_SUPABASE_*` e
+  reconstruir o frontend; esta implantação não publica o frontend.
+
+As versões remotas foram geradas pelo MCP. Antes de usar `supabase db push`,
+reconciliar o histórico remoto com os arquivos locais, que têm timestamps
+diferentes e incluem migrações históricas aplicadas manualmente.

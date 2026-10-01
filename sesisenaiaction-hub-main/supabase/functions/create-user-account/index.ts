@@ -1,6 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 
-const ADMIN_EMAIL = "administrador.plan@gmail.com";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -29,7 +28,9 @@ Deno.serve(async (request) => {
 
     const { data: caller, error: callerError } = await admin.auth.getUser(authorization.slice(7));
     if (callerError || !caller.user) return json({ error: "Sessão inválida" }, 401);
-    if (caller.user.email?.toLowerCase() !== ADMIN_EMAIL) {
+    const { data: callerProfile, error: profileError } = await admin
+      .from("profiles").select("role").eq("id", caller.user.id).single();
+    if (profileError || callerProfile?.role !== "admin") {
       return json({ error: "Apenas o Administrador pode cadastrar usuários" }, 403);
     }
 

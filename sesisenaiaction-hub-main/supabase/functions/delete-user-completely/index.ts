@@ -1,6 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 
-const ADMIN_EMAIL = "administrador.plan@gmail.com";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -29,7 +28,9 @@ Deno.serve(async (request) => {
 
     const { data: caller, error: callerError } = await admin.auth.getUser(authorization.slice(7));
     if (callerError || !caller.user) return json({ error: "Sessão inválida" }, 401);
-    if (caller.user.email?.toLowerCase() !== ADMIN_EMAIL) {
+    const { data: callerProfile, error: profileError } = await admin
+      .from("profiles").select("role").eq("id", caller.user.id).single();
+    if (profileError || callerProfile?.role !== "admin") {
       return json({ error: "Apenas o Administrador pode excluir usuários" }, 403);
     }
 
@@ -42,12 +43,21 @@ Deno.serve(async (request) => {
 
     const { data: target, error: targetError } = await admin.auth.admin.getUserById(userId);
     if (targetError || !target.user) return json({ error: "Usuário não encontrado" }, 404);
-    if (target.user.email?.toLowerCase() === ADMIN_EMAIL) {
+    const { data: targetProfile, error: targetProfileError } = await admin
+      .from("profiles").select("role").eq("id", userId).single();
+    if (targetProfileError) throw targetProfileError;
+    if (targetProfile.role === "admin") {
       return json({ error: "O Administrador não pode ser excluído" }, 400);
     }
 
-    // As FKs usam ON DELETE CASCADE, excluir no Auth também remove perfil,
-    // planos criados e atribuições relacionadas em uma única operação.
+    const { count, error: plansError } = await admin.from("action_plans")
+      .select("id", { count: "exact", head: true }).eq("created_by", userId);
+    if (plansError) throw plansError;
+    if (count) {
+      return json({ error: "Este usuário criou planos de ação e não pode ser excluído. Os registros institucionais devem ser preservados." }, 409);
+    }
+
+    // The database FK also rejects deletion if a plan is created concurrently.
     const { error: deleteError } = await admin.auth.admin.deleteUser(userId);
     if (deleteError) throw deleteError;
 

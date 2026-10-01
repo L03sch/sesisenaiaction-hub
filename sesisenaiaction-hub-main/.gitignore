@@ -10,6 +10,8 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+.permission-test-runtime/
+supabase/.temp/
 *.local
 
 # Editor directories and files

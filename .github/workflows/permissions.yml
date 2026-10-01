@@ -1,0 +1,30 @@
+name: Permission regression checks
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  permissions:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sesisenaiaction-hub-main
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: sesisenaiaction-hub-main/package-lock.json
+      - run: npm ci
+      - run: npm run build
+      - run: npx tsc --noEmit -p tsconfig.app.json
+      - run: node --test scripts/test-user-management.mjs
+      - name: Install isolated PostgreSQL test runtime
+        run: npm install --prefix "$RUNNER_TEMP/permission-runtime" --no-package-lock --no-save @electric-sql/pglite@0.3.14
+      - name: Exercise database permissions
+        run: node --test scripts/test-permissions.mjs
+        env:
+          PGLITE_MODULE: ${{ runner.temp }}/permission-runtime/node_modules/@electric-sql/pglite/dist/index.js

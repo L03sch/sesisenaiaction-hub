@@ -38,7 +38,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ABSOLUTE_ADMIN_EMAIL } from "@/lib/systemAdmin";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 
 interface UserProfile {
@@ -65,7 +64,8 @@ export default function Users() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
-  const [currentUserEmail, setCurrentUserEmail] = useState("");
+  const [currentUserId, setCurrentUserId] = useState("");
+  const [currentUserRole, setCurrentUserRole] = useState("");
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [newUser, setNewUser] = useState({
@@ -83,7 +83,14 @@ export default function Users() {
         navigate("/auth");
         return;
       }
-      setCurrentUserEmail(session.user.email || "");
+      setCurrentUserId(session.user.id);
+      const { data: callerProfile, error: roleError } = await supabase
+        .from("profiles").select("role").eq("id", session.user.id).single();
+      if (roleError || !callerProfile || !["admin", "coordenador"].includes(callerProfile.role)) {
+        navigate("/dashboard");
+        return;
+      }
+      setCurrentUserRole(callerProfile.role);
 
       const { data } = await supabase
         .from("profiles")
@@ -119,7 +126,7 @@ export default function Users() {
     );
   }, [search, roleFilter, professors]);
 
-  const isAbsoluteAdmin = currentUserEmail.toLowerCase() === ABSOLUTE_ADMIN_EMAIL.toLowerCase();
+  const isAdmin = currentUserRole === "admin";
 
   const getRoleLabel = (role: string) => {
     const labels = {
@@ -140,7 +147,7 @@ export default function Users() {
   };
 
   const handleDeleteUser = async (userId: string, userName: string) => {
-    if (!isAbsoluteAdmin) {
+    if (!isAdmin) {
       toast.error("Apenas o Administrador pode excluir usuários");
       return;
     }
@@ -218,7 +225,7 @@ export default function Users() {
             <h1 className="text-3xl font-bold tracking-tight">Usuários</h1>
             <p className="text-muted-foreground">Visualize todos os usuários do sistema</p>
           </div>
-          {isAbsoluteAdmin && (
+          {isAdmin && (
             <Dialog>
               <DialogTrigger asChild>
                 <Button>Cadastrar usuário</Button>
@@ -321,7 +328,7 @@ export default function Users() {
                       <Badge className={getRoleColor(prof.role)}>
                         {getRoleLabel(prof.role)}
                       </Badge>
-                      {isAbsoluteAdmin && prof.email.toLowerCase() !== ABSOLUTE_ADMIN_EMAIL.toLowerCase() && (
+                      {isAdmin && prof.id !== currentUserId && prof.role !== "admin" && (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button
@@ -339,6 +346,7 @@ export default function Users() {
                               <AlertDialogDescription>
                                 Tem certeza que deseja remover o acesso de{" "}
                                 <strong>{prof.full_name}</strong>? Esta ação não pode ser desfeita.
+                                Contas que criaram planos não podem ser excluídas, para preservar os registros.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>

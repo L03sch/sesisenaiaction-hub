@@ -2,6 +2,10 @@
 
 Este diretório contém toda a configuração e migrações do banco de dados Supabase para o projeto SESI SENAI Action Hub.
 
+Para as regras de acesso atuais, testes e implantação da correção de permissões,
+consulte [PERMISSIONS.md](PERMISSIONS.md). A lista de setup abaixo é histórica:
+aplique **todos** os arquivos de `migrations/` em ordem, incluindo os de 2026.
+
 ## 📁 Estrutura
 
 ```

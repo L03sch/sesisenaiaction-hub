@@ -39,7 +39,7 @@ export default function Dashboard() {
         supabase.from("action_plans").select("id", { count: "exact", head: true }),
         supabase.from("action_plans").select("id", { count: "exact", head: true }).in("status", ["planning", "in_progress"]),
         supabase.from("action_plans").select("id", { count: "exact", head: true }).eq("status", "completed"),
-        supabase.from("profiles").select("id", { count: "exact", head: true }),
+        supabase.from("profiles").select("id", { count: "exact", head: true }).eq("role", "professor"),
       ]);
 
       setStats({
@@ -63,7 +63,9 @@ export default function Dashboard() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Tela Inicial</h1>
-            <p className="text-muted-foreground">Visão geral dos planos de ação</p>
+            <p className="text-muted-foreground">
+              {userRole === "professor" ? "Visão geral dos planos atribuídos a você" : "Visão geral dos planos de ação"}
+            </p>
           </div>
           {canCreatePlan && (
             <Button onClick={() => navigate("/plans/new")} size="lg" className="shadow-lg">

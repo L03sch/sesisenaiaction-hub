@@ -27,6 +27,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [userName, setUserName] = useState("");
+  const [userRole, setUserRole] = useState("");
   const { theme, setTheme } = useTheme();
 
   useEffect(() => {
@@ -35,11 +36,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       if (session) {
         const { data: profile } = await supabase
           .from("profiles")
-          .select("full_name")
+          .select("full_name, role")
           .eq("id", session.user.id)
           .single();
         
-        if (profile) setUserName(profile.full_name);
+        if (profile) {
+          setUserName(profile.full_name);
+          setUserRole(profile.role);
+        }
       }
     };
     getUserData();
@@ -89,7 +93,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
           {/* Navigation */}
           <nav className="flex-1 p-4 space-y-2">
-            {menuItems.map((item) => {
+            {menuItems.filter((item) => item.path !== "/users" || ["admin", "coordenador"].includes(userRole)).map((item) => {
               const Icon = item.icon;
               const active = isActive(item.path);
               return (

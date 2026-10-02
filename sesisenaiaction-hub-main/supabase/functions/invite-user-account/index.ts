@@ -24,7 +24,7 @@ Deno.serve(async (request) => {
     const { data: profile, error: profileError } = await admin.from("profiles")
       .select("role,is_absolute_admin").eq("id", caller.user.id).single();
     if (profileError || profile?.role !== "admin" || profile?.is_absolute_admin !== true) {
-      return json({ error: "Apenas o Admin absoluto pode convidar usuários" }, 403);
+      return json({ error: "Apenas o Admin principal pode convidar usuários" }, 403);
     }
     const body = await request.json();
     const email = typeof body.user_email === "string" ? body.user_email.trim().toLowerCase() : "";
@@ -34,7 +34,7 @@ Deno.serve(async (request) => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || !fullName) {
       return json({ error: "Preencha nome e email válidos" }, 400);
     }
-    if (!["professor", "coordenador"].includes(role)) return json({ error: "Tipo de usuário inválido" }, 400);
+    if (!["professor", "coordenador", "admin"].includes(role)) return json({ error: "Tipo de usuário inválido" }, 400);
 
     const enrollmentToken = crypto.randomUUID();
     const { error: enrollmentError } = await admin.rpc("prepare_user_enrollment", {

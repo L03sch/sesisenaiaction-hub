@@ -234,7 +234,7 @@ export default function Users() {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Convidar usuário</DialogTitle>
-                  <DialogDescription>Envie um convite para professor ou coordenador. A pessoa define sua própria senha.</DialogDescription>
+                  <DialogDescription>Envie um convite para professor, coordenador ou administrador. A pessoa define sua própria senha.</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleCreateUser} className="space-y-4">
                   <div className="space-y-2">
@@ -252,6 +252,7 @@ export default function Users() {
                       <SelectContent>
                         <SelectItem value="professor">Professor</SelectItem>
                         <SelectItem value="coordenador">Coordenador</SelectItem>
+                        <SelectItem value="admin">Administrador</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

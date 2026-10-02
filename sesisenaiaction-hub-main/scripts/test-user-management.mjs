@@ -107,8 +107,8 @@ test("failed plan lookup does not allow account deletion", async () => {
   assert.equal(response.status, 500); assert.equal(calls.length, 0);
 });
 
-test("invitation cannot grant admin privileges", async () => {
-  const {response, calls} = await invoke("invite-user-account", {newRole: "admin"});
+test("invitation cannot grant the principal Admin role", async () => {
+  const {response, calls} = await invoke("invite-user-account", {newRole: "absolute_admin"});
   assert.equal(response.status, 400); assert.equal(calls.length, 0);
 });
 test("invitation configures coordinator on the server and uses a fixed redirect", async () => {
@@ -136,4 +136,16 @@ for (const absolute of [true,false]) test(`principal Admin cannot be deleted by 
 test("normal admin can delete a coordinator",async()=>{
  const {response,calls}=await invoke("delete-user-completely",{absolute:false,targetRole:"coordenador"});
  assert.equal(response.status,200);assert.equal(calls.length,1);
+});
+
+test("principal Admin can invite an ordinary administrator", async () => {
+ const {response,calls}=await invoke("invite-user-account",{newRole:"admin"});
+ assert.equal(response.status,201);
+ assert.equal(calls[0][1].user_role,"admin");
+ assert.equal(calls[1][1].data.is_absolute_admin,undefined);
+ assert.equal(calls[1][1].data.role,undefined);
+});
+test("normal admin cannot invite another administrator", async () => {
+ const {response,calls}=await invoke("invite-user-account",{absolute:false,newRole:"admin"});
+ assert.equal(response.status,403);assert.equal(calls.length,0);
 });

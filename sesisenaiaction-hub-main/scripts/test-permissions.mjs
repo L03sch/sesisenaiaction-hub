@@ -77,6 +77,19 @@ test("Supabase permission regression suite", async (suite) => {
         } finally { await db.exec("ROLLBACK"); }
       });
     }
+    await suite.test("admin invitation creates only an ordinary administrator", async () => {
+      await db.exec("BEGIN");
+      try {
+        const token = "90000000-0000-0000-0000-000000000098";
+        const newId = "80000000-0000-0000-0000-000000000098";
+        await db.query("SELECT public.prepare_user_enrollment($1,'admin-invite@example.test','admin')", [token]);
+        await db.query("INSERT INTO auth.users(id,email,raw_user_meta_data) VALUES ($1,'admin-invite@example.test',$2)", [newId, JSON.stringify({full_name:"Invited admin",enrollment_token:token,is_absolute_admin:true,role:"absolute_admin"})]);
+        const profile=(await db.query("SELECT role,is_absolute_admin FROM public.profiles WHERE id=$1",[newId])).rows[0];
+        assert.equal(profile.role,"admin");assert.equal(profile.is_absolute_admin,false);
+        assert.equal((await db.query("SELECT count(*) AS total FROM public.profiles WHERE is_absolute_admin")).rows[0].total,1);
+        await db.query("DELETE FROM auth.users WHERE id=$1",[newId]);
+      } finally { await db.exec("ROLLBACK"); }
+    });
     const assigned = "10000000-0000-0000-0000-000000000001";
     const hidden = "10000000-0000-0000-0000-000000000002";
     await db.query(`INSERT INTO public.action_plans

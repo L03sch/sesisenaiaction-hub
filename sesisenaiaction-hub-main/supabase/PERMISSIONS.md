@@ -33,8 +33,9 @@ A tabela fica no schema privado, com RLS sem políticas (nega todo acesso de cli
 
 O botão **Convidar usuário** aparece somente para o Admin absoluto. O convidado
 recebe o link e define a própria senha. O cadastro direto por senha continua
-disponível no servidor, também restrito ao absoluto. Não é possível criar outro
-Admin por essas funções. Exclusões preservam planos institucionais.
+disponível no servidor, também restrito ao absoluto. O convite aceita administradores comuns, com `is_absolute_admin = false`.
+Nenhum convite pode criar outra conta principal; o cadastro direto por senha
+permanece limitado a professor e coordenador. Exclusões preservam planos institucionais.
 
 As políticas permitem leitura de participantes do mesmo plano. Avatares continuam
 públicos como na implementação existente; somente o dono pode gravar em sua pasta.
@@ -138,3 +139,7 @@ A interface identifica a conta principal como **Admin**. A migração
 `allow_normal_admin_deletion` limita a proteção permanente à conta principal.
 Nenhuma conta real foi excluída. A exclusão de autores ainda é bloqueada para
 preservar planos institucionais.
+
+A migração `allow_admin_invitations` permite a função `admin` nas autorizações
+de convite. Somente a conta principal pode emitir esses convites. Metadados
+editáveis não concedem o privilégio principal, mesmo em um convite de Admin.

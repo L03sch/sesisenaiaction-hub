@@ -29,9 +29,9 @@ Deno.serve(async (request) => {
     const { data: caller, error: callerError } = await admin.auth.getUser(authorization.slice(7));
     if (callerError || !caller.user) return json({ error: "Sessão inválida" }, 401);
     const { data: callerProfile, error: profileError } = await admin
-      .from("profiles").select("role").eq("id", caller.user.id).single();
+      .from("profiles").select("role,is_absolute_admin").eq("id", caller.user.id).single();
     if (profileError || callerProfile?.role !== "admin") {
-      return json({ error: "Apenas o Administrador pode excluir usuários" }, 403);
+      return json({ error: "Apenas administradores podem excluir usuários" }, 403);
     }
 
     const body = await request.json();
@@ -44,10 +44,13 @@ Deno.serve(async (request) => {
     const { data: target, error: targetError } = await admin.auth.admin.getUserById(userId);
     if (targetError || !target.user) return json({ error: "Usuário não encontrado" }, 404);
     const { data: targetProfile, error: targetProfileError } = await admin
-      .from("profiles").select("role").eq("id", userId).single();
+      .from("profiles").select("role,is_absolute_admin").eq("id", userId).single();
     if (targetProfileError) throw targetProfileError;
-    if (targetProfile.role === "admin") {
-      return json({ error: "O Administrador não pode ser excluído" }, 400);
+    if (!targetProfile || targetProfile.is_absolute_admin) {
+      return json({ error: "O Admin principal não pode ser excluído" }, 403);
+    }
+    if (!callerProfile.is_absolute_admin && !["professor", "coordenador"].includes(targetProfile.role)) {
+      return json({ error: "Somente o Admin principal pode excluir outros administradores" }, 403);
     }
 
     const { count, error: plansError } = await admin.from("action_plans")

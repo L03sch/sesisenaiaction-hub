@@ -6,28 +6,44 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { GraduationCap, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 export default function Auth() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmation, setConfirmation] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [invite] = useState(() => new URLSearchParams(window.location.search).get("invite") === "1" || new URLSearchParams(window.location.hash.slice(1)).get("type") === "invite");
+  const [inviteSession, setInviteSession] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) navigate("/dashboard");
+      if (invite) setInviteSession(Boolean(session));
+      else if (session) navigate("/dashboard");
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) navigate("/dashboard");
+      if (invite) setInviteSession(Boolean(session));
+      else if (session) navigate("/dashboard");
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, invite]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (invite) {
+      if (!inviteSession) { toast.error("Abra um convite válido enviado pelo administrador"); return; }
+      if (password.length < 6 || password !== confirmation) { toast.error("Use pelo menos 6 caracteres e confirme a mesma senha"); return; }
+      setLoading(true);
+      const { error } = await supabase.auth.updateUser({ password });
+      setLoading(false);
+      if (error) toast.error(error.message);
+      else { toast.success("Senha definida. Bem-vindo!"); navigate("/dashboard", { replace: true }); }
+      return;
+    }
     if (!email || !password) {
       toast.error("Preencha todos os campos");
       return;
@@ -56,7 +72,7 @@ export default function Auth() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignIn} className="space-y-4">
-                <div className="space-y-2">
+                {!invite && <div className="space-y-2">
                   <Label htmlFor="email-login">Email</Label>
                   <Input
                     id="email-login"
@@ -66,26 +82,35 @@ export default function Auth() {
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={loading}
                   />
-                </div>
+                </div>}
+                {invite && <p className="text-sm text-muted-foreground">{inviteSession ? "Defina sua senha para concluir o convite." : "Abra o link do convite enviado pelo Admin para ativar seu acesso."}</p>}
                 <div className="space-y-2">
                   <Label htmlFor="password-login">Senha</Label>
                   <Input
                     id="password-login"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={loading}
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
+                {invite && <div className="space-y-2">
+                  <Label htmlFor="password-confirm">Confirme a senha</Label>
+                  <Input id="password-confirm" type={showPassword ? "text" : "password"} value={confirmation} onChange={(e) => setConfirmation(e.target.value)} disabled={loading} minLength={6} />
+                </div>}
+                <Button type="button" variant="ghost" size="sm" aria-pressed={showPassword} onClick={() => setShowPassword(!showPassword)} disabled={loading}>
+                  {showPassword ? <EyeOff className="mr-2 h-4 w-4" /> : <Eye className="mr-2 h-4 w-4" />}
+                  {showPassword ? "Ocultar senha" : "Mostrar senha"}
+                </Button>
+                <Button type="submit" className="w-full" disabled={loading || (invite && !inviteSession)}>
                   {loading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Entrando...
+                      {invite ? "Salvando..." : "Entrando..."}
                     </>
                   ) : (
-                    "Entrar"
+                    invite ? "Definir senha e entrar" : "Entrar"
                   )}
                 </Button>
           </form>

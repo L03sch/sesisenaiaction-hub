@@ -5,3 +5,6 @@ verify_jwt = true
 
 [functions.delete-user-completely]
 verify_jwt = true
+
+[functions.invite-user-account]
+verify_jwt = true

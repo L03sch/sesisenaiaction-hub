@@ -18,7 +18,8 @@ test("Supabase permission regression suite", async (suite) => {
       CREATE SCHEMA auth; CREATE SCHEMA storage;
       CREATE TABLE auth.users (
         id uuid PRIMARY KEY, email text, raw_user_meta_data jsonb DEFAULT '{}',
-        raw_app_meta_data jsonb DEFAULT '{}'
+        raw_app_meta_data jsonb DEFAULT '{}', banned_until timestamptz,
+        deleted_at timestamptz, encrypted_password text
       );
       CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$
         SELECT NULLIF(current_setting('request.jwt.claim.sub', true), '')::uuid
@@ -45,11 +46,50 @@ test("Supabase permission regression suite", async (suite) => {
     const ids = Object.fromEntries(["admin", "coordenador", "professor", "peer", "outsider"].map((role, i) =>
       [role, `00000000-0000-0000-0000-${String(i + 1).padStart(12, "0")}`]));
     for (const [role, id] of Object.entries(ids)) {
+      const token = `90000000-0000-0000-0000-${id.slice(-12)}`;
+      await db.query("INSERT INTO private.user_enrollments(token,email,role) VALUES ($1,$2,$3)", [token, `${role}@example.test`, role === "coordenador" ? role : "professor"]);
       await db.query(`INSERT INTO auth.users (id, email, raw_user_meta_data, raw_app_meta_data)
         VALUES ($1, $2, $3, $4)`, [id, `${role}@example.test`,
-        JSON.stringify({ full_name: role, role: "admin" }),
+        JSON.stringify({ full_name: role, role: "admin", enrollment_token: token }),
         JSON.stringify({ user_role: ["admin", "coordenador"].includes(role) ? role : "professor" })]);
     }
+    await db.query("UPDATE public.profiles SET role = 'admin' WHERE id = $1", [ids.admin]);
+    await db.query("UPDATE auth.users SET raw_app_meta_data = $2 WHERE id = $1", [ids.admin, JSON.stringify({user_role: "admin"})]);
+    await db.query("UPDATE public.profiles SET is_absolute_admin = true WHERE id = $1", [ids.admin]);
+    await suite.test("public signup cannot create an account without admission", async () => {
+      await assert.rejects(db.query("INSERT INTO auth.users(id,email) VALUES (gen_random_uuid(), 'forged@example.test')"), {code: "23514"});
+    });
+    await suite.test("only one profile can hold the absolute privilege", async () => {
+      await db.exec("BEGIN");
+      try {
+        await db.query("UPDATE public.profiles SET role = 'admin' WHERE id = $1", [ids.outsider]);
+        await assert.rejects(db.query("UPDATE public.profiles SET is_absolute_admin = true WHERE id = $1", [ids.outsider]), {code: "23505"});
+      } finally { await db.exec("ROLLBACK"); }
+    });
+    for (const failure of ["missing", "expired", "other-email", "consumed"]) {
+      await suite.test(`enrollment rejects ${failure} admission`, async () => {
+        await db.exec("BEGIN");
+        try {
+          const token = "90000000-0000-0000-0000-000000000099";
+          if (failure !== "missing") await db.query("INSERT INTO private.user_enrollments(token,email,role,expires_at) VALUES ($1,$2,'professor',$3)", [token, failure === "other-email" ? "other@example.test" : "probe@example.test", failure === "expired" ? "2020-01-01" : "2099-01-01"]);
+          if (failure === "consumed") await db.query("INSERT INTO auth.users(id,email,raw_user_meta_data) VALUES (gen_random_uuid(),'probe@example.test',$1)", [JSON.stringify({full_name: "Probe", enrollment_token: token})]);
+          await assert.rejects(db.query("INSERT INTO auth.users(id,email,raw_user_meta_data) VALUES (gen_random_uuid(),'probe@example.test',$1)", [JSON.stringify({enrollment_token: token})]), {code: "23514"});
+        } finally { await db.exec("ROLLBACK"); }
+      });
+    }
+    await suite.test("admin invitation creates only an ordinary administrator", async () => {
+      await db.exec("BEGIN");
+      try {
+        const token = "90000000-0000-0000-0000-000000000098";
+        const newId = "80000000-0000-0000-0000-000000000098";
+        await db.query("SELECT public.prepare_user_enrollment($1,'admin-invite@example.test','admin')", [token]);
+        await db.query("INSERT INTO auth.users(id,email,raw_user_meta_data) VALUES ($1,'admin-invite@example.test',$2)", [newId, JSON.stringify({full_name:"Invited admin",enrollment_token:token,is_absolute_admin:true,role:"absolute_admin"})]);
+        const profile=(await db.query("SELECT role,is_absolute_admin FROM public.profiles WHERE id=$1",[newId])).rows[0];
+        assert.equal(profile.role,"admin");assert.equal(profile.is_absolute_admin,false);
+        assert.equal((await db.query("SELECT count(*) AS total FROM public.profiles WHERE is_absolute_admin")).rows[0].total,1);
+        await db.query("DELETE FROM auth.users WHERE id=$1",[newId]);
+      } finally { await db.exec("ROLLBACK"); }
+    });
     const assigned = "10000000-0000-0000-0000-000000000001";
     const hidden = "10000000-0000-0000-0000-000000000002";
     await db.query(`INSERT INTO public.action_plans
@@ -100,7 +140,7 @@ test("Supabase permission regression suite", async (suite) => {
       assert.equal((await query("UPDATE public.profiles SET full_name = 'Attack' WHERE id = $1 RETURNING id", [ids.peer])).rows.length, 0);
     });
     for (const role of ["professor", "coordenador", "admin"]) {
-      for (const column of ["role", "email", "id"]) {
+      for (const column of ["role", "email", "id", "is_absolute_admin"]) {
         await check(`${role} cannot change profile ${column}`, role, () => denied(`UPDATE public.profiles SET ${column} = ${column} WHERE id = $1`, [ids[role]]));
       }
       await check(`${role} cannot insert a forged profile`, role, () => denied("INSERT INTO public.profiles DEFAULT VALUES"));
@@ -110,6 +150,9 @@ test("Supabase permission regression suite", async (suite) => {
       assert.equal((await query("SELECT role FROM public.profiles WHERE id = $1", [ids.outsider])).rows[0].role, "professor");
       assert.equal((await query("SELECT public.is_absolute_admin() AS allowed")).rows[0].allowed, false);
     });
+    for (const name of ["admin", "coordenador", "professor"]) {
+      await check(`${name} cannot issue new-user admissions through the API`, name, () => denied("SELECT public.prepare_user_enrollment(gen_random_uuid(), 'forged@example.test', 'professor')"));
+    }
     await check("professor cannot create a plan", "professor", () => denied(`INSERT INTO public.action_plans
       (title, description, objective, start_date, end_date, created_by)
       VALUES ('Attack', '', '', '2026-10-01', '2026-10-02', $1)`, [ids.professor]));
@@ -147,12 +190,44 @@ test("Supabase permission regression suite", async (suite) => {
     await check("admin RPC uses protected role rather than email", "admin", async () => {
       assert.equal((await query("SELECT public.is_absolute_admin() AS allowed")).rows[0].allowed, true);
     });
+    for (const [name, sql, params] of [
+      ["remove absolute admin flag", "UPDATE public.profiles SET is_absolute_admin = false WHERE id = $1", [ids.admin]],
+      ["delete admin profile", "DELETE FROM public.profiles WHERE id = $1", [ids.admin]],
+      ["demote admin", "UPDATE public.profiles SET role = 'professor' WHERE id = $1", [ids.admin]],
+      ["change admin identity", "UPDATE public.profiles SET email = 'changed@example.test' WHERE id = $1", [ids.admin]],
+      ["delete admin Auth", "DELETE FROM auth.users WHERE id = $1", [ids.admin]],
+      ["change admin Auth email", "UPDATE auth.users SET email = 'changed@example.test' WHERE id = $1", [ids.admin]],
+      ["soft-delete admin Auth", "UPDATE auth.users SET deleted_at = now() WHERE id = $1", [ids.admin]],
+      ["ban admin Auth", "UPDATE auth.users SET banned_until = now() + interval '1 day' WHERE id = $1", [ids.admin]],
+      ["demote admin Auth metadata", `UPDATE auth.users SET raw_app_meta_data = '{"user_role":"professor"}' WHERE id = $1`, [ids.admin]],
+      ["remove admin Auth role", "UPDATE auth.users SET raw_app_meta_data = '{}' WHERE id = $1", [ids.admin]],
+    ]) {
+      await suite.test(`privileged operation cannot ${name}`, async () => {
+        await db.exec("BEGIN");
+        try { await denied(sql, params, "23514"); }
+        finally { await db.exec("ROLLBACK"); }
+      });
+    }
+    await suite.test("admin password recovery and personal metadata remain supported", async () => {
+      await db.exec("BEGIN");
+      try {
+        await query("UPDATE auth.users SET encrypted_password = 'test-only', raw_user_meta_data = '{\"full_name\":\"Updated\"}' WHERE id = $1", [ids.admin]);
+      } finally { await db.exec("ROLLBACK"); }
+    });
     await suite.test("deleting a creator in Auth preserves institutional plans", async () => {
       await db.exec("BEGIN");
       try {
         await denied("DELETE FROM auth.users WHERE id = $1", [ids.coordenador], "23503");
       } finally { await db.exec("ROLLBACK"); }
       assert.equal((await query("SELECT * FROM public.action_plans")).rows.length, 2);
+    });
+    await suite.test("normal administrator without plans can be deleted", async () => {
+      await db.exec("BEGIN");
+      try {
+        await query("UPDATE public.profiles SET role = 'admin' WHERE id = $1", [ids.outsider]);
+        await query("DELETE FROM auth.users WHERE id = $1", [ids.outsider]);
+        assert.equal((await query("SELECT * FROM public.profiles WHERE id = $1", [ids.outsider])).rows.length, 0);
+      } finally { await db.exec("ROLLBACK"); }
     });
     await suite.test("account without authored plans can still be deleted", async () => {
       await db.exec("BEGIN");

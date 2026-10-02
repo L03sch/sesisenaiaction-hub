@@ -29,9 +29,9 @@ Deno.serve(async (request) => {
     const { data: caller, error: callerError } = await admin.auth.getUser(authorization.slice(7));
     if (callerError || !caller.user) return json({ error: "Sessão inválida" }, 401);
     const { data: callerProfile, error: profileError } = await admin
-      .from("profiles").select("role").eq("id", caller.user.id).single();
-    if (profileError || callerProfile?.role !== "admin") {
-      return json({ error: "Apenas o Administrador pode excluir usuários" }, 403);
+      .from("profiles").select("role,is_absolute_admin").eq("id", caller.user.id).single();
+    if (profileError || callerProfile?.role !== "admin" || callerProfile?.is_absolute_admin !== true) {
+      return json({ error: "Apenas o Admin absoluto pode excluir usuários" }, 403);
     }
 
     const body = await request.json();

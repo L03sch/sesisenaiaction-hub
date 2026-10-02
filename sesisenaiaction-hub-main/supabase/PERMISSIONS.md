@@ -2,19 +2,36 @@
 
 ## Modelo de acesso
 
-| Operação | Professor | Coordenador | Administrador |
-| --- | --- | --- | --- |
-| Ler planos | Apenas atribuídos | Todos | Todos |
-| Criar, editar e excluir planos e atribuições | Não | Sim | Sim |
-| Ler perfis | Próprio e participantes dos seus planos | Todos | Todos |
-| Editar dados pessoais | Próprio | Próprio | Próprio |
-| Alterar função, identidade ou email pelo cliente | Não | Não | Não |
-| Cadastrar e excluir contas pelas Edge Functions | Não | Não | Sim |
+| Operação | Professor | Coordenador | Admin comum | Admin absoluto |
+| --- | --- | --- | --- | --- |
+| Ler planos | Apenas atribuídos | Todos | Todos | Todos |
+| Gerenciar planos e atribuições | Não | Sim | Sim | Sim |
+| Ler perfis | Próprio e participantes | Todos | Todos | Todos |
+| Editar dados pessoais | Próprio | Próprio | Próprio | Próprio |
+| Alterar função, identidade ou email pelo cliente | Não | Não | Não | Não |
+| Convidar, cadastrar e excluir contas | Não | Não | Não | Sim |
 
-A função administrativa é `profiles.role = 'admin'`. Email não concede privilégios.
-O cliente não pode inserir ou excluir perfis, nem editar função, email, identidade
-ou autoria de um plano. Contas são criadas e excluídas pelas Edge Functions,
-que validam a sessão com Auth e consultam a função atual no banco.
+O Admin absoluto exige `profiles.role = 'admin'` e `is_absolute_admin = true`.
+O índice parcial permite uma única conta absoluta. A marca não pode ser removida
+ou transferida por DML. Email e metadata editável não concedem privilégios.
+Todos os Admins têm leitura global, mas somente o absoluto gerencia contas.
+Triggers protegem contas Admin contra exclusão, alteração de função/identidade,
+exclusão lógica e banimento também no Auth Admin API. Login, dados pessoais e
+recuperação de senha permanecem permitidos. Proprietários da infraestrutura podem
+remover essas proteções deliberadamente por DDL; o aplicativo não possui esse poder.
+
+Cada novo acesso exige uma autorização descartável criada pelas Edge Functions
+após validar a sessão e o privilégio absoluto no banco. O token expira em dez
+minutos, é vinculado ao email, define a função autorizada e é consumido antes da
+criação do perfil. O trigger rejeita cadastros diretos sem essa autorização,
+inclusive tentativas pela API pública, e remove o token dos metadados. Os RPCs de
+preparação/cancelamento aceitam somente `service_role`; o cliente não pode executá-los.
+A tabela fica no schema privado, com RLS sem políticas (nega todo acesso de cliente).
+
+O botão **Convidar usuário** aparece somente para o Admin absoluto. O convidado
+recebe o link e define a própria senha. O cadastro direto por senha continua
+disponível no servidor, também restrito ao absoluto. Não é possível criar outro
+Admin por essas funções. Exclusões preservam planos institucionais.
 
 As políticas permitem leitura de participantes do mesmo plano. Avatares continuam
 públicos como na implementação existente; somente o dono pode gravar em sua pasta.
@@ -86,3 +103,30 @@ Projeto `Plan-Action` (`inlbptawboswnwdqlnlm`), ativo:
 As versões remotas foram geradas pelo MCP. Antes de usar `supabase db push`,
 reconciliar o histórico remoto com os arquivos locais, que têm timestamps
 diferentes e incluem migrações históricas aplicadas manualmente.
+
+## Admin único aplicado em 02/10/2026
+
+A conta escolhida pelo proprietário, `administrador.plan@gmail.com`, foi marcada
+pelo UUID como único Admin absoluto. A outra conta Admin foi preservada, com
+visão global e sem gerenciamento de usuários.
+
+Aplicadas `protect_absolute_admin`, `unique_absolute_admin` e
+`require_admin_enrollment`. Publicadas `create-user-account` e
+`delete-user-completely` versão 4, e `invite-user-account` versão 1.
+O teste remoto transacional confirmou unicidade, visão global, proteção contra
+exclusão/rebaixamento, negação ao Admin comum, bloqueio de cadastro público,
+atribuição da função autorizada e impossibilidade de reutilizar o token.
+Todos os dados de teste foram revertidos; nenhum convite real foi enviado.
+
+Em novas instalações, selecionar explicitamente o UUID do Admin após aplicar
+`unique_absolute_admin`; nunca inferir a escolha pelo email. A migração de
+admissões exige que criação de contas de infraestrutura também passe pelo RPC
+privilegiado; não alterar o trigger para liberar signup público.
+
+O Supabase Auth deve autorizar a URL exata de retorno:
+`https://plan-action-sesi-senai.jean-franco-junior.chatgpt.site/auth?invite=1`.
+Configurar Site URL para o mesmo domínio e conferir SMTP/template de convite
+(`ConfirmationURL`). O MCP não oferece edição dessas configurações; o painel
+pediu login. Sem verificar isso, entrega de email e retorno de um convite real
+não estão validados. O Sites também precisa permitir que os convidados abram
+a página de login; a publicação atual é privada do proprietário.

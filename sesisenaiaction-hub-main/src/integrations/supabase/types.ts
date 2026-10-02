@@ -123,6 +123,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          is_absolute_admin: boolean
           role: string
           updated_at: string | null
         }
@@ -133,6 +134,7 @@ export type Database = {
           email: string
           full_name: string
           id: string
+          is_absolute_admin?: boolean
           role: string
           updated_at?: string | null
         }
@@ -143,6 +145,7 @@ export type Database = {
           email?: string
           full_name?: string
           id?: string
+          is_absolute_admin?: boolean
           role?: string
           updated_at?: string | null
         }

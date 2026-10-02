@@ -45,6 +45,7 @@ interface UserProfile {
   full_name: string;
   email: string;
   role: string;
+  is_absolute_admin: boolean;
   department: string | null;
 }
 
@@ -65,13 +66,12 @@ export default function Users() {
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState("all");
   const [currentUserId, setCurrentUserId] = useState("");
-  const [currentUserRole, setCurrentUserRole] = useState("");
+  const [isAdmin, setIsAdmin] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [newUser, setNewUser] = useState({
     fullName: "",
     email: "",
-    password: "",
     role: "professor",
     department: "",
   });
@@ -85,12 +85,12 @@ export default function Users() {
       }
       setCurrentUserId(session.user.id);
       const { data: callerProfile, error: roleError } = await supabase
-        .from("profiles").select("role").eq("id", session.user.id).single();
+        .from("profiles").select("role,is_absolute_admin").eq("id", session.user.id).single();
       if (roleError || !callerProfile || !["admin", "coordenador"].includes(callerProfile.role)) {
         navigate("/dashboard");
         return;
       }
-      setCurrentUserRole(callerProfile.role);
+      setIsAdmin(callerProfile.role === "admin" && callerProfile.is_absolute_admin);
 
       const { data } = await supabase
         .from("profiles")
@@ -126,7 +126,6 @@ export default function Users() {
     );
   }, [search, roleFilter, professors]);
 
-  const isAdmin = currentUserRole === "admin";
 
   const getRoleLabel = (role: string) => {
     const labels = {
@@ -148,7 +147,7 @@ export default function Users() {
 
   const handleDeleteUser = async (userId: string, userName: string) => {
     if (!isAdmin) {
-      toast.error("Apenas o Administrador pode excluir usuários");
+      toast.error("Apenas o Admin absoluto pode excluir usuários");
       return;
     }
 
@@ -186,17 +185,16 @@ export default function Users() {
 
   const handleCreateUser = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!newUser.fullName || !newUser.email || !newUser.password) {
-      toast.error("Preencha nome, email e senha");
+    if (!newUser.fullName || !newUser.email) {
+      toast.error("Preencha nome e email");
       return;
     }
 
     setCreating(true);
     try {
-      const { error } = await supabase.functions.invoke("create-user-account", {
+      const { data: result, error } = await supabase.functions.invoke("invite-user-account", {
         body: {
           user_email: newUser.email,
-          user_password: newUser.password,
           user_full_name: newUser.fullName,
           user_role: newUser.role,
           user_department: newUser.department || null,
@@ -205,8 +203,9 @@ export default function Users() {
 
       if (error) throw error;
 
-      toast.success("Usuário cadastrado com sucesso");
-      setNewUser({ fullName: "", email: "", password: "", role: "professor", department: "" });
+      if (result?.warning) toast.warning(result.warning);
+      else toast.success("Convite enviado por email");
+      setNewUser({ fullName: "", email: "", role: "professor", department: "" });
       const { data } = await supabase.from("profiles").select("*").order("full_name");
       if (data) setProfessors(data);
     } catch (error: unknown) {
@@ -228,12 +227,12 @@ export default function Users() {
           {isAdmin && (
             <Dialog>
               <DialogTrigger asChild>
-                <Button>Cadastrar usuário</Button>
+                <Button>Convidar usuário</Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Cadastrar usuário</DialogTitle>
-                  <DialogDescription>Crie um acesso para professor ou coordenador.</DialogDescription>
+                  <DialogTitle>Convidar usuário</DialogTitle>
+                  <DialogDescription>Envie um convite para professor ou coordenador. A pessoa define sua própria senha.</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleCreateUser} className="space-y-4">
                   <div className="space-y-2">
@@ -243,10 +242,6 @@ export default function Users() {
                   <div className="space-y-2">
                     <Label htmlFor="new-user-email">Email</Label>
                     <Input id="new-user-email" type="email" value={newUser.email} onChange={(event) => setNewUser({ ...newUser, email: event.target.value })} disabled={creating} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="new-user-password">Senha</Label>
-                    <Input id="new-user-password" type="password" minLength={6} value={newUser.password} onChange={(event) => setNewUser({ ...newUser, password: event.target.value })} disabled={creating} />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="new-user-role">Função</Label>
@@ -263,7 +258,7 @@ export default function Users() {
                     <Input id="new-user-department" value={newUser.department} onChange={(event) => setNewUser({ ...newUser, department: event.target.value })} disabled={creating} />
                   </div>
                   <DialogFooter>
-                    <Button type="submit" disabled={creating}>{creating ? "Cadastrando..." : "Cadastrar"}</Button>
+                    <Button type="submit" disabled={creating}>{creating ? "Enviando..." : "Enviar convite"}</Button>
                   </DialogFooter>
                 </form>
               </DialogContent>
@@ -326,7 +321,7 @@ export default function Users() {
                     </Avatar>
                     <div className="flex items-center gap-2">
                       <Badge className={getRoleColor(prof.role)}>
-                        {getRoleLabel(prof.role)}
+                        {prof.is_absolute_admin ? "Admin absoluto" : getRoleLabel(prof.role)}
                       </Badge>
                       {isAdmin && prof.id !== currentUserId && prof.role !== "admin" && (
                         <AlertDialog>

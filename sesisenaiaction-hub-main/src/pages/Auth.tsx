@@ -83,7 +83,7 @@ export default function Auth() {
                     disabled={loading}
                   />
                 </div>}
-                {invite && <p className="text-sm text-muted-foreground">{inviteSession ? "Defina sua senha para concluir o convite." : "Abra o link do convite enviado pelo Admin absoluto para ativar seu acesso."}</p>}
+                {invite && <p className="text-sm text-muted-foreground">{inviteSession ? "Defina sua senha para concluir o convite." : "Abra o link do convite enviado pelo Admin para ativar seu acesso."}</p>}
                 <div className="space-y-2">
                   <Label htmlFor="password-login">Senha</Label>
                   <Input

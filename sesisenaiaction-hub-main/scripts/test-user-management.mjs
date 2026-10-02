@@ -26,7 +26,7 @@ async function invoke(functionName, options = {}) {
         select() { return chain; },
         update(payload) { calls.push(["profile", payload]); return chain; },
         eq(_column, value) { id = value; return chain; },
-        single: async () => ({ data: { is_absolute_admin: options.absolute !== false, role: id === "caller" ? (options.role || "admin") : (options.targetRole || "professor") }, error: options.profileError || null }),
+        single: async () => ({ data: { is_absolute_admin: id === "caller" ? options.absolute !== false : options.targetAbsolute === true, role: id === "caller" ? (options.role || "admin") : (options.targetRole || "professor") }, error: options.profileError || null }),
         then(resolve) { return Promise.resolve({ count: options.plans || 0, error: options.plansError || null }).then(resolve); },
       };
       assert.ok(["profiles", "action_plans"].includes(table));
@@ -70,9 +70,9 @@ for (const functionName of ["create-user-account", "delete-user-completely", "in
     const { response, calls } = await invoke(functionName, { profileError: { message: "Unavailable" } });
     assert.equal(response.status, 403); assert.equal(calls.length, 0);
   });
-  test(`${functionName}: ordinary admin cannot manage users`, async () => {
+  test(`${functionName}: ordinary admin follows operation permissions`, async () => {
     const {response, calls} = await invoke(functionName, {absolute: false});
-    assert.equal(response.status, 403); assert.equal(calls.length, 0);
+    assert.equal(response.status, functionName === "delete-user-completely" ? 200 : 403); assert.equal(calls.length, functionName === "delete-user-completely" ? 1 : 0);
   });
   test(`${functionName}: protected absolute admin works with any email`, async () => {
     const { response, calls } = await invoke(functionName);
@@ -94,9 +94,9 @@ test("administrators cannot delete themselves", async () => {
   const { response, calls } = await invoke("delete-user-completely", { targetId: "caller" });
   assert.equal(response.status, 400); assert.equal(calls.length, 0);
 });
-test("administrators cannot delete another administrator", async () => {
-  const { response, calls } = await invoke("delete-user-completely", { targetRole: "admin" });
-  assert.equal(response.status, 400); assert.equal(calls.length, 0);
+test("ordinary administrators cannot delete another administrator", async () => {
+  const { response, calls } = await invoke("delete-user-completely", { targetRole: "admin", absolute: false });
+  assert.equal(response.status, 403); assert.equal(calls.length, 0);
 });
 test("authors cannot be deleted along with their institutional plans", async () => {
   const { response, calls } = await invoke("delete-user-completely", { plans: 2 });
@@ -123,4 +123,17 @@ test("invitation configures coordinator on the server and uses a fixed redirect"
 test("email provider failure is not reported as a sent invitation", async () => {
   const {response, calls} = await invoke("invite-user-account", {inviteError: {message: "SMTP unavailable"}});
   assert.equal(response.status, 400); assert.equal(calls.length, 3);
+});
+
+test("principal Admin can delete a normal administrator", async () => {
+ const {response,calls} = await invoke("delete-user-completely", {targetRole:"admin"});
+ assert.equal(response.status,200); assert.equal(calls[0][0],"delete");
+});
+for (const absolute of [true,false]) test(`principal Admin cannot be deleted by admin absolute=${absolute}`,async()=>{
+ const {response,calls}=await invoke("delete-user-completely",{absolute,targetRole:"admin",targetAbsolute:true});
+ assert.equal(response.status,403);assert.equal(calls.length,0);
+});
+test("normal admin can delete a coordinator",async()=>{
+ const {response,calls}=await invoke("delete-user-completely",{absolute:false,targetRole:"coordenador"});
+ assert.equal(response.status,200);assert.equal(calls.length,1);
 });

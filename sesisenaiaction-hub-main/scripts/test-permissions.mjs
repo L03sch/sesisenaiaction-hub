@@ -208,6 +208,14 @@ test("Supabase permission regression suite", async (suite) => {
       } finally { await db.exec("ROLLBACK"); }
       assert.equal((await query("SELECT * FROM public.action_plans")).rows.length, 2);
     });
+    await suite.test("normal administrator without plans can be deleted", async () => {
+      await db.exec("BEGIN");
+      try {
+        await query("UPDATE public.profiles SET role = 'admin' WHERE id = $1", [ids.outsider]);
+        await query("DELETE FROM auth.users WHERE id = $1", [ids.outsider]);
+        assert.equal((await query("SELECT * FROM public.profiles WHERE id = $1", [ids.outsider])).rows.length, 0);
+      } finally { await db.exec("ROLLBACK"); }
+    });
     await suite.test("account without authored plans can still be deleted", async () => {
       await db.exec("BEGIN");
       try {

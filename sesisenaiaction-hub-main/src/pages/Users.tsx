@@ -67,6 +67,7 @@ export default function Users() {
   const [roleFilter, setRoleFilter] = useState("all");
   const [currentUserId, setCurrentUserId] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [canDeleteUsers, setCanDeleteUsers] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [newUser, setNewUser] = useState({
@@ -90,6 +91,7 @@ export default function Users() {
         navigate("/dashboard");
         return;
       }
+      setCanDeleteUsers(callerProfile.role === "admin");
       setIsAdmin(callerProfile.role === "admin" && callerProfile.is_absolute_admin);
 
       const { data } = await supabase
@@ -146,8 +148,8 @@ export default function Users() {
   };
 
   const handleDeleteUser = async (userId: string, userName: string) => {
-    if (!isAdmin) {
-      toast.error("Apenas o Admin absoluto pode excluir usuários");
+    if (!canDeleteUsers) {
+      toast.error("Apenas administradores podem excluir usuários");
       return;
     }
 
@@ -321,9 +323,9 @@ export default function Users() {
                     </Avatar>
                     <div className="flex items-center gap-2">
                       <Badge className={getRoleColor(prof.role)}>
-                        {prof.is_absolute_admin ? "Admin absoluto" : getRoleLabel(prof.role)}
+                        {prof.is_absolute_admin ? "Admin" : getRoleLabel(prof.role)}
                       </Badge>
-                      {isAdmin && prof.id !== currentUserId && prof.role !== "admin" && (
+                      {canDeleteUsers && prof.id !== currentUserId && !prof.is_absolute_admin && (isAdmin || ["professor", "coordenador"].includes(prof.role)) && (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button

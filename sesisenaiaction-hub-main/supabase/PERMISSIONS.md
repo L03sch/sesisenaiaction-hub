@@ -9,13 +9,16 @@
 | Ler perfis | Próprio e participantes | Todos | Todos | Todos |
 | Editar dados pessoais | Próprio | Próprio | Próprio | Próprio |
 | Alterar função, identidade ou email pelo cliente | Não | Não | Não | Não |
-| Convidar, cadastrar e excluir contas | Não | Não | Não | Sim |
+| Convidar e cadastrar contas | Não | Não | Não | Sim |
+| Excluir coordenadores e professores | Não | Não | Sim | Sim |
+| Excluir administradores comuns | Não | Não | Não | Sim |
 
 O Admin absoluto exige `profiles.role = 'admin'` e `is_absolute_admin = true`.
 O índice parcial permite uma única conta absoluta. A marca não pode ser removida
 ou transferida por DML. Email e metadata editável não concedem privilégios.
-Todos os Admins têm leitura global, mas somente o absoluto gerencia contas.
-Triggers protegem contas Admin contra exclusão, alteração de função/identidade,
+Todos os Admins têm leitura global, mas somente o principal convida e cadastra contas. Admins comuns podem excluir
+coordenadores e professores; só o principal exclui outros administradores.
+Triggers protegem a conta principal Admin contra exclusão, alteração de função/identidade,
 exclusão lógica e banimento também no Auth Admin API. Login, dados pessoais e
 recuperação de senha permanecem permitidos. Proprietários da infraestrutura podem
 remover essas proteções deliberadamente por DDL; o aplicativo não possui esse poder.
@@ -130,3 +133,8 @@ Configurar Site URL para o mesmo domínio e conferir SMTP/template de convite
 pediu login. Sem verificar isso, entrega de email e retorno de um convite real
 não estão validados. O Sites também precisa permitir que os convidados abram
 a página de login; a publicação atual é privada do proprietário.
+
+A interface identifica a conta principal como **Admin**. A migração
+`allow_normal_admin_deletion` limita a proteção permanente à conta principal.
+Nenhuma conta real foi excluída. A exclusão de autores ainda é bloqueada para
+preservar planos institucionais.

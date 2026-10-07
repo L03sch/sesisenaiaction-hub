@@ -26,10 +26,11 @@ async function invoke(functionName, options = {}) {
         select() { return chain; },
         update(payload) { calls.push(["profile", payload]); return chain; },
         eq(_column, value) { id = value; return chain; },
-        single: async () => ({ data: { is_absolute_admin: id === "caller" ? options.absolute !== false : options.targetAbsolute === true, role: id === "caller" ? (options.role || "admin") : (options.targetRole || "professor") }, error: options.profileError || null }),
+        maybeSingle: async () => ({data: options.unknownDepartment ? null : {name: "Educação"},error: options.departmentError || null}),
+        single: async () => ({ data: { department: id === "caller" ? (options.callerDepartment === undefined ? "Educação" : options.callerDepartment) : (options.targetDepartment || "Educação"), is_absolute_admin: id === "caller" ? options.absolute !== false : options.targetAbsolute === true, role: id === "caller" ? (options.role || "admin") : (options.targetRole || "professor") }, error: options.profileError || null }),
         then(resolve) { return Promise.resolve({ count: options.plans || 0, error: options.plansError || null }).then(resolve); },
       };
-      assert.ok(["profiles", "action_plans"].includes(table));
+      assert.ok(["profiles", "action_plans", "departments"].includes(table));
       return chain;
     },
   };
@@ -45,7 +46,7 @@ async function invoke(functionName, options = {}) {
   const response = await handler(new Request("https://example.test", {
     method: "POST", headers,
     body: JSON.stringify(functionName !== "delete-user-completely"
-      ? { user_email: "new@example.test", user_password: "test-password", user_full_name: "New User", user_role: options.newRole || "professor" }
+      ? { user_email: "new@example.test", user_password: "test-password", user_full_name: "New User", user_department: options.newDepartment === undefined ? "Educação" : options.newDepartment, user_role: options.newRole || "professor" }
       : { user_id: options.targetId || "target" }),
   }));
   return { response, calls };
@@ -148,4 +149,23 @@ test("principal Admin can invite an ordinary administrator", async () => {
 test("normal admin cannot invite another administrator", async () => {
  const {response,calls}=await invoke("invite-user-account",{absolute:false,newRole:"admin"});
  assert.equal(response.status,403);assert.equal(calls.length,0);
+});
+
+for (const functionName of ["create-user-account","invite-user-account"]) {
+  for (const options of [{newDepartment:null},{unknownDepartment:true}]) test(`${functionName} rejects invalid department ${JSON.stringify(options)}`,async()=>{
+    const {response,calls}=await invoke(functionName,options);assert.equal(response.status,400);assert.equal(calls.length,0);
+  });
+  test(`${functionName} fails closed when department lookup fails`,async()=>{
+    const {response,calls}=await invoke(functionName,{departmentError:{message:"Unavailable"}});assert.equal(response.status,500);assert.equal(calls.length,0);
+  });
+}
+test("ordinary administrators can manage professors across departments",async()=>{
+ const {response,calls}=await invoke("delete-user-completely",{absolute:false,callerDepartment:null,targetDepartment:"Mecânica"});assert.equal(response.status,200);assert.equal(calls.length,1);
+});
+test("principal can delete ordinary users across departments",async()=>{
+ const {response,calls}=await invoke("delete-user-completely",{callerDepartment:"Educação",targetDepartment:"Mecânica"});assert.equal(response.status,200);assert.equal(calls.length,1);
+});
+
+test("administrator invitation does not require a department",async()=>{
+ const {response,calls}=await invoke("invite-user-account",{newRole:"admin",newDepartment:null});assert.equal(response.status,201);assert.equal(calls[1][1].data.department,null);
 });

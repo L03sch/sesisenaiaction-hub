@@ -36,6 +36,14 @@ Deno.serve(async (request) => {
     }
     if (!["professor", "coordenador", "admin"].includes(role)) return json({ error: "Tipo de usuário inválido" }, 400);
 
+    if (!department && role !== "admin") return json({ error: "Selecione um departamento" }, 400);
+    if (department) {
+    const { data: registeredDepartment, error: departmentError } = await admin.from("departments")
+      .select("name").eq("name", department).maybeSingle();
+    if (departmentError) throw departmentError;
+    if (!registeredDepartment) return json({ error: "Departamento inválido" }, 400);
+    }
+
     const enrollmentToken = crypto.randomUUID();
     const { error: enrollmentError } = await admin.rpc("prepare_user_enrollment", {
       enrollment_token: enrollmentToken, user_email: email, user_role: role,

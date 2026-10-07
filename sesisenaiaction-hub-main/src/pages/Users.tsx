@@ -40,6 +40,8 @@ import {
 } from "@/components/ui/dialog";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 
+import { useDepartments } from "@/hooks/use-departments";
+
 interface UserProfile {
   id: string;
   full_name: string;
@@ -60,6 +62,8 @@ async function getFunctionErrorMessage(error: unknown) {
 
 export default function Users() {
   const navigate = useNavigate();
+  const departments = useDepartments();
+  const [savingDepartment, setSavingDepartment] = useState<string | null>(null);
   const [professors, setProfessors] = useState<UserProfile[]>([]);
   const [filteredProfessors, setFilteredProfessors] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,7 +91,7 @@ export default function Users() {
       setCurrentUserId(session.user.id);
       const { data: callerProfile, error: roleError } = await supabase
         .from("profiles").select("role,is_absolute_admin").eq("id", session.user.id).single();
-      if (roleError || !callerProfile || !["admin", "coordenador"].includes(callerProfile.role)) {
+      if (roleError || !callerProfile) {
         navigate("/dashboard");
         return;
       }
@@ -108,6 +112,17 @@ export default function Users() {
 
     fetchData();
   }, [navigate]);
+
+  const setDepartment = async (userId: string, department: string) => {
+    setSavingDepartment(userId);
+    const { error } = await supabase.rpc("set_user_department", { target_user_id: userId, new_department: department });
+    if (error) toast.error(error.message);
+    else {
+      setProfessors((current) => current.map((user) => user.id === userId ? { ...user, department } : user));
+      toast.success("Departamento atualizado");
+    }
+    setSavingDepartment(null);
+  };
 
   useEffect(() => {
     const normalizedSearch = search.toLowerCase();
@@ -187,8 +202,8 @@ export default function Users() {
 
   const handleCreateUser = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!newUser.fullName || !newUser.email) {
-      toast.error("Preencha nome e email");
+    if (!newUser.fullName || !newUser.email || (newUser.role !== "admin" && !newUser.department)) {
+      toast.error("Preencha nome, email e departamento");
       return;
     }
 
@@ -224,7 +239,7 @@ export default function Users() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Usuários</h1>
-            <p className="text-muted-foreground">Visualize todos os usuários do sistema</p>
+            <p className="text-muted-foreground">{canDeleteUsers ? "Visualize todos os usuários do sistema" : "Visualize os usuários do seu departamento"}</p>
           </div>
           {isAdmin && (
             <Dialog>
@@ -257,8 +272,11 @@ export default function Users() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="new-user-department">Departamento (opcional)</Label>
-                    <Input id="new-user-department" value={newUser.department} onChange={(event) => setNewUser({ ...newUser, department: event.target.value })} disabled={creating} />
+                    <Label htmlFor="new-user-department">{newUser.role === "admin" ? "Departamento (opcional)" : "Departamento *"}</Label>
+                    <Select value={newUser.department} onValueChange={(department) => setNewUser({ ...newUser, department })} disabled={creating}>
+                      <SelectTrigger id="new-user-department"><SelectValue placeholder="Selecione o departamento" /></SelectTrigger>
+                      <SelectContent>{departments.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}</SelectContent>
+                    </Select>
                   </div>
                   <DialogFooter>
                     <Button type="submit" disabled={creating}>{creating ? "Enviando..." : "Enviar convite"}</Button>
@@ -370,7 +388,13 @@ export default function Users() {
                       <span className="truncate">{prof.email}</span>
                     </div>
 
-                    {prof.department && (
+                    {isAdmin && prof.role !== "admin" ? <div className="space-y-2">
+                      <Label htmlFor={`department-${prof.id}`}>Departamento</Label>
+                      <Select value={prof.department || ""} disabled={savingDepartment === prof.id} onValueChange={(value) => setDepartment(prof.id, value)}>
+                        <SelectTrigger id={`department-${prof.id}`}><SelectValue placeholder="Definir departamento" /></SelectTrigger>
+                        <SelectContent>{departments.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div> : prof.department && (
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Briefcase className="w-4 h-4 flex-shrink-0" />
                         <span className="truncate">{prof.department}</span>

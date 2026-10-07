@@ -11,7 +11,6 @@ import { toast } from "sonner";
 import { ArrowLeft, Edit, Calendar, Target, Users, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { getActionPlanCategoryLabel } from "@/lib/actionPlanCategories";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,6 +37,7 @@ interface Plan {
   status: string;
   priority: string;
   category: string | null;
+  department: string | null;
   created_at: string;
 }
 
@@ -182,7 +182,7 @@ export default function PlanDetails() {
             </div>
           </div>
           {canEdit && (
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button variant="outline" onClick={() => navigate(`/plans/${id}/edit`)}>
                 <Edit className="mr-2 w-4 h-4" />
                 Editar
@@ -220,9 +220,8 @@ export default function PlanDetails() {
           <Badge variant="outline">
             Prioridade: {getPriorityLabel(plan.priority)}
           </Badge>
-          <Badge variant="secondary">
-            Área: {getActionPlanCategoryLabel(plan.category)}
-          </Badge>
+
+              {plan.department && <Badge variant="outline">{plan.department}</Badge>}
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">

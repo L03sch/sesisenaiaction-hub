@@ -36,7 +36,7 @@ test("Supabase permission regression suite", async (suite) => {
     `);
     // PGlite includes UUID generation natively; the legacy uuid-ossp extension
     // is the only production migration dependency substituted by this harness.
-    for (const name of (await readdir("supabase/migrations")).filter((name) => name.endsWith(".sql")).sort()) {
+    for (const name of (await readdir("supabase/migrations")).filter((name) => name.endsWith(".sql") && !name.endsWith("_department_isolation.sql") && !name.endsWith("_department_rpc_hardening.sql")).sort()) {
       const sql = (await readFile(`supabase/migrations/${name}`, "utf8"))
         .replace(/CREATE EXTENSION IF NOT EXISTS "uuid-ossp";/g, "")
         .replace(/uuid_generate_v4\(\)/g, "gen_random_uuid()");
@@ -245,5 +245,79 @@ test("Supabase permission regression suite", async (suite) => {
       await denied("UPDATE storage.objects SET name = $1", [`${ids.peer}/attack.png`]);
     });
     await check("avatar cannot be uploaded into another user's folder", "professor", () => denied("INSERT INTO storage.objects (bucket_id, name) VALUES ('avatars', $1)", [`${ids.peer}/attack.png`]));
+    // Verify upgrade from the legacy model, then exercise the final department policies.
+    await db.exec("UPDATE public.profiles SET department='Educação'");
+    await db.query("UPDATE public.profiles SET department='Tecnologia da Informação' WHERE id=$1",[ids.outsider]);
+    const departmentMigration = (await readdir("supabase/migrations")).find((name) => name.endsWith("_department_isolation.sql"));
+    await db.exec(await readFile(`supabase/migrations/${departmentMigration}`,"utf8"));
+    const rpcMigration = (await readdir("supabase/migrations")).find((name) => name.endsWith("_department_rpc_hardening.sql"));
+    await db.exec(await readFile(`supabase/migrations/${rpcMigration}`,"utf8"));
+    const otherPlan = "10000000-0000-0000-0000-000000000003";
+    await db.query("INSERT INTO public.action_plans(id,title,description,objective,start_date,end_date,created_by,department) VALUES ($1,'Other','Test','Test','2026-10-01','2026-10-02',$2,'Tecnologia da Informação')",[otherPlan,ids.admin]);
+    await db.query("INSERT INTO public.plan_assignments(plan_id,professor_id) VALUES ($1,$2)",[otherPlan,ids.outsider]);
+    await check("department coordinator cannot read other plans or users", "coordenador", async()=>{
+      assert.equal((await query("SELECT id FROM public.action_plans WHERE id=$1",[otherPlan])).rows.length,0);
+      assert.equal((await query("SELECT id FROM public.profiles WHERE id=$1",[ids.outsider])).rows.length,0);
+      assert.equal((await query("SELECT * FROM public.action_plans")).rows.length,2);
+      assert.equal((await query("SELECT * FROM public.departments")).rows.length,1);
+    });
+    await check("principal Admin retains global access", "admin", async()=>{
+      assert.equal((await query("SELECT * FROM public.action_plans")).rows.length,3);
+      assert.equal((await query("SELECT * FROM public.profiles")).rows.length,5);
+      assert.equal((await query("SELECT * FROM public.departments")).rows.length,10);
+    });
+    await check("professor sees only assigned plans within department", "professor", async()=>{
+      assert.deepEqual((await query("SELECT id FROM public.action_plans")).rows.map(r=>r.id),[assigned]);
+      assert.equal((await query("SELECT * FROM public.plan_assignments")).rows.length,2);
+      assert.equal((await query("SELECT * FROM public.profiles")).rows.length,4);
+    });
+    for(const role of ["professor","coordenador"]) {
+      await check(`${role} cannot self-change department`,role,()=>denied("UPDATE public.profiles SET department='Tecnologia da Informação' WHERE id=$1",[ids[role]]));
+      await check(`${role} cannot invoke department management RPC`,role,()=>denied("SELECT public.set_user_department($1,'Tecnologia da Informação')",[ids[role]]));
+    }
+    await check("cross-department assignment is rejected even for principal", "admin", ()=>denied("INSERT INTO public.plan_assignments(plan_id,professor_id) VALUES ($1,$2)",[assigned,ids.outsider],"23514"));
+    await check("coordinator cannot create cross-department plan", "coordenador", ()=>denied("INSERT INTO public.action_plans(title,description,objective,start_date,end_date,created_by,department) VALUES ('Attack','','','2026-10-01','2026-10-02',$1,'Tecnologia da Informação')",[ids.coordenador]));
+    for(const operation of ["UPDATE public.action_plans SET title='Attack' WHERE id=$1 RETURNING id","DELETE FROM public.action_plans WHERE id=$1 RETURNING id"]) {
+      await check("coordinator cannot mutate another department plan: "+operation, "coordenador", async()=>assert.equal((await query(operation,[otherPlan])).rows.length,0));
+    }
+    await check("coordinator cannot read or remove another department assignments", "coordenador", async()=>{
+      assert.equal((await query("SELECT * FROM public.plan_assignments WHERE plan_id=$1",[otherPlan])).rows.length,0);
+      assert.equal((await query("DELETE FROM public.plan_assignments WHERE plan_id=$1 RETURNING id",[otherPlan])).rows.length,0);
+    });
+    await check("plan department cannot be moved after creation", "admin", ()=>denied("UPDATE public.action_plans SET department='Tecnologia da Informação' WHERE id=$1",[assigned],"23514"));
+    await check("principal can define user department", "admin", async()=>{
+      await query("SELECT public.set_user_department($1,'Mecânica')",[ids.coordenador]);
+      assert.equal((await query("SELECT department FROM public.profiles WHERE id=$1",[ids.coordenador])).rows[0].department,"Mecânica");
+    });
+    await check("department transfer cannot invalidate existing assignments", "admin", ()=>denied("SELECT public.set_user_department($1,'Mecânica')",[ids.professor],"23514"));
+    await check("ordinary admin retains global access without a department", "outsider", async()=>{
+      // Role change is trusted setup inside the test transaction.
+      await db.exec("RESET ROLE"); await query("DELETE FROM public.plan_assignments WHERE professor_id=$1",[ids.outsider]); await query("UPDATE public.profiles SET role='admin',department=NULL WHERE id=$1",[ids.outsider]); await db.exec("SET LOCAL ROLE authenticated");
+      assert.equal((await query("SELECT * FROM public.action_plans")).rows.length,3);
+      assert.equal((await query("SELECT * FROM public.profiles")).rows.length,5);
+    });
+    await suite.test("missing department cannot acquire another user's scope",async()=>{
+      await db.exec("BEGIN");
+      try {
+        await query("DELETE FROM public.plan_assignments WHERE professor_id=$1",[ids.outsider]);
+        await query("UPDATE public.profiles SET department=NULL WHERE id=$1",[ids.outsider]);
+        await query("SELECT set_config('request.jwt.claim.sub',$1,true)",[ids.outsider]); await db.exec("SET LOCAL ROLE authenticated");
+        assert.equal((await query("SELECT * FROM public.action_plans")).rows.length,0);
+        assert.equal((await query("SELECT * FROM public.plan_assignments")).rows.length,0);
+        assert.equal((await query("SELECT * FROM public.profiles")).rows.length,1);
+      } finally { await db.exec("ROLLBACK"); }
+    });
+    const payload = {title:"Atomic",description:"Test",objective:"Test",expected_result:"Test",where_location:"Test",how_to_execute:"Test",estimated_cost:0,start_date:"2026-10-01",end_date:"2026-10-02",status:"planning",priority:"medium",category:null,department:"Educação"};
+    await check("plan and matching participants save atomically", "coordenador",async()=>{
+      const planId=(await query("SELECT public.save_department_plan($1,$2) AS id",[payload,[ids.professor]])).rows[0].id;
+      assert.equal((await query("SELECT * FROM public.plan_assignments WHERE plan_id=$1",[planId])).rows.length,1);
+    });
+    await check("failed assignment rolls back the complete save", "admin",async()=>{
+      const count=(await query("SELECT count(*) FROM public.action_plans")).rows[0].count;
+      await db.exec("SAVEPOINT failed_save");
+      await denied("SELECT public.save_department_plan($1,$2)",[payload,[ids.outsider]],"23514");
+      await db.exec("ROLLBACK TO SAVEPOINT failed_save");
+      assert.equal((await query("SELECT count(*) FROM public.action_plans")).rows[0].count,count);
+    });
   } finally { await db.close(); }
 });

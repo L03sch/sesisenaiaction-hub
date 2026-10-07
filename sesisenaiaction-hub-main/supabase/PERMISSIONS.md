@@ -143,3 +143,16 @@ preservar planos institucionais.
 A migração `allow_admin_invitations` permite a função `admin` nas autorizações
 de convite. Somente a conta principal pode emitir esses convites. Metadados
 editáveis não concedem o privilégio principal, mesmo em um convite de Admin.
+
+
+## Separação por departamento — 07/10/2026
+
+O catálogo `departments` reutiliza os dez departamentos que já apareciam em Minha conta e preserva nomes legados. Cada novo plano exige um departamento. Administradores têm visão global e não precisam de departamento; apenas o principal pode convidar usuários e definir o departamento de professores/coordenadores. Coordenadores consultam e gerenciam somente seu setor. Professores consultam os usuários do setor e os planos do setor em que participam.
+
+O departamento é protegido contra alteração pelo próprio usuário. `set_user_department` exige o Admin principal e recusa transferências que deixariam participações incompatíveis. Administradores comuns continuam podendo excluir professores/coordenadores, com visão global, mas não outros administradores. O Admin principal permanece protegido.
+
+`save_department_plan` salva plano e participantes na mesma transação, com as permissões do solicitante. O banco recusa participantes de outro departamento, inclusive para administradores. O departamento de um plano já classificado não pode ser trocado durante a edição. Planos legados sem classificação ficam acessíveis apenas aos administradores até serem classificados; a migração só infere a classificação quando o autor e todos os participantes concordam.
+
+Novos convites/cadastros de professores e coordenadores exigem departamento válido; convites de administradores não. A interface consulta o catálogo central e filtra os participantes por departamento antes de selecioná-los. A página Usuários é acessível aos professores, com a mesma restrição no banco.
+
+Validação: 141 testes de banco/servidor passaram; teste remoto transacional confirmou isolamento de planos/perfis, bloqueio de mudança de setor e visão global do Admin. Registros temporários, identificados como TESTE, serviram à conferência da interface e foram removidos sem envio de convites.

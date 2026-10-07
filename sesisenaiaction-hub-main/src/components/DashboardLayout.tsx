@@ -1,201 +1,104 @@
 import { ReactNode, useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  LayoutDashboard,
-  ClipboardList,
-  Users,
-  LogOut,
-  Menu,
-  Moon,
-  Sun,
-  User,
-  MessageCircle,
-} from "lucide-react";
+import { ChevronDown, LogOut, Menu, Moon, Sun, User, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/hooks/use-theme";
 import { AccessibilityButton } from "@/components/AccessibilityButton";
 
-interface DashboardLayoutProps {
-  children: ReactNode;
-}
-
-export function DashboardLayout({ children }: DashboardLayoutProps) {
+export function DashboardLayout({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [userName, setUserName] = useState("");
   const [userRole, setUserRole] = useState("");
+  const [principalAdmin, setPrincipalAdmin] = useState(false);
   const { theme, setTheme } = useTheme();
 
   useEffect(() => {
+    let active = true;
     const getUserData = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("full_name, role")
-          .eq("id", session.user.id)
-          .single();
-        
-        if (profile) {
-          setUserName(profile.full_name);
-          setUserRole(profile.role);
-        }
+      if (!session) return;
+      const { data: profile } = await supabase.from("profiles")
+        .select("full_name, role, is_absolute_admin").eq("id", session.user.id).single();
+      if (active && profile) {
+        setUserName(profile.full_name);
+        setUserRole(profile.role);
+        setPrincipalAdmin(profile.is_absolute_admin);
       }
     };
     getUserData();
+    return () => { active = false; };
   }, []);
 
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast.error("Erro ao sair");
-    } else {
-      navigate("/auth");
-    }
+    if (error) toast.error("Erro ao sair");
+    else navigate("/auth");
   };
-
   const menuItems = [
-    { icon: LayoutDashboard, label: "Tela Inicial", path: "/dashboard" },
-    { icon: ClipboardList, label: "Planos de Ação", path: "/plans" },
-    { icon: Users, label: "Usuários", path: "/users" },
-    { icon: MessageCircle, label: "Suporte", path: "/support" },
-  ];
-
-  const isActive = (path: string) => location.pathname === path;
+    { label: "Visão geral", path: "/dashboard" },
+    { label: "Planos de ação", path: "/plans" },
+    { label: "Usuários", path: "/users" },
+    { label: "Suporte", path: "/support" },
+  ].filter((item) => item.path !== "/users" || ["admin", "coordenador"].includes(userRole));
+  const roleLabel = principalAdmin ? "Admin" : ({ admin: "Administrador", coordenador: "Coordenador", professor: "Professor" }[userRole] || "Minha conta");
 
   return (
-    <>
-      <div className="min-h-screen flex w-full bg-background">
-      {/* Sidebar */}
-      <aside
-        className={cn(
-          "fixed inset-y-0 left-0 z-50 bg-card border-r border-border transition-all duration-300 shadow-lg",
-          sidebarOpen ? "w-64" : "w-20"
-        )}
-      >
-        <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-center gap-3 p-6 border-b border-border">
-            <div className="w-10 h-10 rounded-lg bg-gradient-primary flex items-center justify-center flex-shrink-0">
-              <img src="/S.png" alt="SESI SENAI" className="w-10 h-10 rounded" />
+    <div className="min-h-screen w-full bg-background">
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-2 focus:z-[60] focus:bg-card focus:p-3 focus:text-primary">Ir para o conteúdo</a>
+      <header className="sticky top-0 z-40 border-b border-border bg-card">
+        <div className="mx-auto flex min-h-20 max-w-[1440px] items-center gap-4 px-4 sm:px-6 lg:gap-8 lg:px-8">
+          <Link to="/dashboard" className="flex shrink-0 items-center gap-3" aria-label="SESI SENAI — Visão geral">
+            <img src="/S.png" alt="SESI SENAI" className="h-11 w-11 object-contain bg-white" />
+            <div className="hidden sm:block">
+              <p className="text-sm font-bold tracking-wide">SESI SENAI</p>
+              <p className="text-xs text-muted-foreground">Planos de ação</p>
             </div>
-            {sidebarOpen && (
-              <div className="flex-1 min-w-0">
-                <h2 className="font-bold text-sm truncate">SESI SENAI</h2>
-                <p className="text-xs text-muted-foreground truncate">Planos de Ação</p>
-              </div>
-            )}
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-2">
-            {menuItems.filter((item) => item.path !== "/users" || ["admin", "coordenador"].includes(userRole)).map((item) => {
-              const Icon = item.icon;
-              const active = isActive(item.path);
-              return (
-                <button
-                  key={item.path}
-                  onClick={() => navigate(item.path)}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
-                    active
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : "hover:bg-muted text-foreground"
-                  )}
-                >
-                  <Icon className="w-5 h-5 flex-shrink-0" />
-                  {sidebarOpen && <span className="font-medium">{item.label}</span>}
-                </button>
-              );
-            })}
-            <AccessibilityButton sidebarOpen={sidebarOpen} />
+          </Link>
+          <nav aria-label="Navegação principal" className="hidden self-stretch lg:flex lg:items-stretch lg:gap-6">
+            {menuItems.map((item) => (
+              <NavLink key={item.path} to={item.path} className={({ isActive }) => cn("flex items-center border-b-2 px-1 text-sm font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-ring", isActive ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground")}>
+                {item.label}
+              </NavLink>
+            ))}
           </nav>
-
-          {/* User & Logout */}
-          <div className="p-4 border-t border-border space-y-2">
-            {sidebarOpen && userName && (
-              <div className="flex items-center justify-between gap-2 w-full px-4 py-2 rounded-lg hover:bg-muted transition-colors">
-                <button
-                  onClick={() => navigate("/account")}
-                  className="flex items-center gap-2 min-w-0 flex-1 text-left"
-                >
-                  <User className="w-4 h-4 flex-shrink-0" />
-                  <span className="font-medium truncate text-sm">{userName}</span>
-                </button>
-                <button
-                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                  className="h-8 w-8 flex-shrink-0 flex items-center justify-center rounded-md hover:bg-accent transition-colors"
-                  title={theme === "dark" ? "Modo claro" : "Modo escuro"}
-                >
-                  {theme === "dark" ? (
-                    <Sun className="w-4 h-4" />
-                  ) : (
-                    <Moon className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
-            )}
-            {!sidebarOpen && (
-              <div className="flex flex-col gap-2">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate("/account")}
-                  className="h-10 w-10"
-                  title="Minha Conta"
-                >
-                  <User className="w-5 h-5" />
+          <div className="ml-auto flex items-center gap-1 sm:gap-2">
+            <AccessibilityButton sidebarOpen={false} placement="header" />
+            <Button variant="ghost" size="icon" onClick={() => setTheme(theme === "dark" ? "light" : "dark")} aria-label={theme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"} title={theme === "dark" ? "Modo claro" : "Modo escuro"}>
+              {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-auto gap-2 px-2 py-2" aria-label="Menu da conta">
+                  <User className="h-5 w-5 shrink-0" />
+                  <span className="hidden max-w-40 text-left sm:block">
+                    <span className="block truncate text-sm font-medium">{userName || "Minha conta"}</span>
+                    <span className="block text-xs font-normal text-muted-foreground">{roleLabel}</span>
+                  </span>
+                  <ChevronDown className="h-4 w-4" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                  className="h-10 w-10"
-                  title={theme === "dark" ? "Modo claro" : "Modo escuro"}
-                >
-                  {theme === "dark" ? (
-                    <Sun className="w-5 h-5" />
-                  ) : (
-                    <Moon className="w-5 h-5" />
-                  )}
-                </Button>
-              </div>
-            )}
-            <Button
-              variant="ghost"
-              onClick={handleSignOut}
-              className="w-full justify-start"
-            >
-              <LogOut className="w-5 h-5 flex-shrink-0" />
-              {sidebarOpen && <span className="ml-3">Sair</span>}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="truncate">{userName || "Minha conta"}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onSelect={() => navigate("/account")}><User className="mr-2 h-4 w-4" />Minha conta</DropdownMenuItem>
+                <DropdownMenuItem onSelect={handleSignOut}><LogOut className="mr-2 h-4 w-4" />Sair</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button variant="ghost" size="icon" className="lg:hidden" aria-label={menuOpen ? "Fechar navegação" : "Abrir navegação"} aria-expanded={menuOpen} aria-controls="mobile-navigation" onClick={() => setMenuOpen(!menuOpen)}>
+              {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </Button>
           </div>
         </div>
-      </aside>
-
-      {/* Main Content */}
-      <div
-        className={cn(
-          "flex-1 transition-all duration-300",
-          sidebarOpen ? "ml-64" : "ml-20"
-        )}
-      >
-        <header className="sticky top-0 z-40 bg-card border-b border-border px-6 py-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-          >
-            <Menu className="w-5 h-5" />
-          </Button>
-        </header>
-        <main className="p-6">{children}</main>
-      </div>
-      </div>
-    </>
+        {menuOpen && <nav id="mobile-navigation" aria-label="Navegação principal no celular" className="grid grid-cols-2 gap-1 border-t border-border p-3 lg:hidden">
+          {menuItems.map((item) => <NavLink key={item.path} to={item.path} onClick={() => setMenuOpen(false)} className={({ isActive }) => cn("border-l-2 px-3 py-3 text-sm font-medium", isActive ? "border-primary bg-primary/10 text-primary" : "border-transparent hover:bg-muted")}>{item.label}</NavLink>)}
+        </nav>}
+      </header>
+      <main id="main-content" className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">{children}</main>
+    </div>
   );
 }

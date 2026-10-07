@@ -118,7 +118,7 @@ export default function PlanDetails() {
     const colors = {
       planning: "bg-muted",
       in_progress: "bg-primary",
-      completed: "bg-secondary",
+      completed: "bg-secondary text-white",
       cancelled: "bg-destructive",
     };
     return colors[status as keyof typeof colors] || "bg-muted";

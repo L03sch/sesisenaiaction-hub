@@ -11,7 +11,7 @@ import { Plus, Search, Eye, Calendar } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ACTION_PLAN_CATEGORIES, getActionPlanCategoryLabel } from "@/lib/actionPlanCategories";
+import { useDepartments } from "@/hooks/use-departments";
 
 interface Plan {
   id: string;
@@ -21,16 +21,17 @@ interface Plan {
   priority: string;
   start_date: string;
   end_date: string;
-  category: string | null;
+  department: string | null;
 }
 
 export default function Plans() {
   const navigate = useNavigate();
+  const departments = useDepartments();
   const [plans, setPlans] = useState<Plan[]>([]);
   const [filteredPlans, setFilteredPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [departmentFilter, setDepartmentFilter] = useState("all");
   const [userRole, setUserRole] = useState<string>("");
 
   useEffect(() => {
@@ -65,18 +66,18 @@ export default function Plans() {
   }, [navigate]);
 
   useEffect(() => {
-    if (search || categoryFilter !== "all") {
+    if (search || departmentFilter !== "all") {
       setFilteredPlans(
         plans.filter((plan) =>
           (!search || plan.title.toLowerCase().includes(search.toLowerCase()) ||
             plan.description.toLowerCase().includes(search.toLowerCase())) &&
-          (categoryFilter === "all" || plan.category === categoryFilter)
+          (departmentFilter === "all" || plan.department === departmentFilter)
         )
       );
     } else {
       setFilteredPlans(plans);
     }
-  }, [search, categoryFilter, plans]);
+  }, [search, departmentFilter, plans]);
 
   const canCreatePlan = ["admin", "coordenador"].includes(userRole);
 
@@ -136,15 +137,15 @@ export default function Plans() {
               className="pl-10"
             />
           </div>
-          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+          <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
             <SelectTrigger className="sm:w-64">
               <SelectValue placeholder="Filtrar por área" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todas as áreas</SelectItem>
-              {ACTION_PLAN_CATEGORIES.map((category) => (
-                <SelectItem key={category.value} value={category.value}>
-                  {category.label}
+              <SelectItem value="all">Todos os departamentos</SelectItem>
+              {departments.map((department) => (
+                <SelectItem key={department} value={department}>
+                  {department}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -161,7 +162,7 @@ export default function Plans() {
           <Card>
             <CardContent className="py-16 text-center">
               <p className="text-muted-foreground">
-                {search || categoryFilter !== "all" ? "Nenhum plano encontrado" : "Nenhum plano cadastrado ainda"}
+                {search || departmentFilter !== "all" ? "Nenhum plano encontrado" : "Nenhum plano cadastrado ainda"}
               </p>
             </CardContent>
           </Card>
@@ -191,7 +192,7 @@ export default function Plans() {
                       {getPriorityLabel(plan.priority)}
                     </Badge>
                     <Badge variant="secondary">
-                      {getActionPlanCategoryLabel(plan.category)}
+                      {plan.department || "Sem departamento definido"}
                     </Badge>
                   </div>
 

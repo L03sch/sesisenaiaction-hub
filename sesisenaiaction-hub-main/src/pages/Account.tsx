@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { ArrowLeft, Camera, Loader2, Save } from "lucide-react";
+import { useDepartments } from "@/hooks/use-departments";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Profile {
@@ -17,6 +18,7 @@ interface Profile {
   email: string;
   role: string;
   department: string | null;
+  is_absolute_admin: boolean;
   phone: string | null;
   school: string | null;
   avatar_url: string | null;
@@ -24,6 +26,7 @@ interface Profile {
 
 export default function Account() {
   const navigate = useNavigate();
+  const departments = useDepartments();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -93,7 +96,7 @@ export default function Account() {
         .from("profiles")
         .update({
           full_name: formData.full_name,
-          department: formData.department || null,
+
           phone: formData.phone || null,
           school: formData.school || null,
         })
@@ -101,6 +104,10 @@ export default function Account() {
 
       if (error) throw error;
 
+      if (profile?.is_absolute_admin && formData.department && formData.department !== profile.department) {
+        const { error: departmentError } = await supabase.rpc("set_user_department", { target_user_id: session.user.id, new_department: formData.department });
+        if (departmentError) throw departmentError;
+      }
       toast.success("Perfil atualizado com sucesso!");
       fetchProfile();
     } catch (error) {
@@ -260,6 +267,7 @@ export default function Account() {
                   <div className="space-y-2">
                     <Label htmlFor="department">Departamento</Label>
                     <Select
+                      disabled={!profile?.is_absolute_admin}
                       value={formData.department}
                       onValueChange={(value) => setFormData({ ...formData, department: value })}
                     >
@@ -267,20 +275,12 @@ export default function Account() {
                         <SelectValue placeholder="Selecione o departamento" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Administração">Administração</SelectItem>
-                        <SelectItem value="Tecnologia da Informação">Tecnologia da Informação</SelectItem>
-                        <SelectItem value="Recursos Humanos">Recursos Humanos</SelectItem>
-                        <SelectItem value="Educação">Educação</SelectItem>
-                        <SelectItem value="Segurança do Trabalho">Segurança do Trabalho</SelectItem>
-                        <SelectItem value="Mecânica">Mecânica</SelectItem>
-                        <SelectItem value="Eletrônica">Eletrônica</SelectItem>
-                        <SelectItem value="Automação">Automação</SelectItem>
-                        <SelectItem value="Logística">Logística</SelectItem>
-                        <SelectItem value="Gestão">Gestão</SelectItem>
+                        {departments.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
 
+                  <p className="text-xs text-muted-foreground">O departamento é definido pelo Admin.</p>
                   <div className="space-y-2">
                     <Label htmlFor="phone">Telefone</Label>
                     <Input

@@ -44,7 +44,7 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
     { label: "Planos de ação", path: "/plans" },
     { label: "Usuários", path: "/users" },
     { label: "Suporte", path: "/support" },
-  ].filter((item) => item.path !== "/users" || ["admin", "coordenador"].includes(userRole));
+  ];
   const roleLabel = principalAdmin ? "Admin" : ({ admin: "Administrador", coordenador: "Coordenador", professor: "Professor" }[userRole] || "Minha conta");
 
   return (

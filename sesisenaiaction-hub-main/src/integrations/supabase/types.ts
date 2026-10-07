@@ -14,8 +14,15 @@ export type Database = {
   }
   public: {
     Tables: {
+      departments: {
+        Row: { name: string }
+        Insert: { name: string }
+        Update: { name?: string }
+        Relationships: []
+      }
       action_plans: {
         Row: {
+          department: string | null
           category: string | null
           created_at: string | null
           created_by: string
@@ -34,6 +41,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          department: string
           category?: string | null
           created_at?: string | null
           created_by: string
@@ -52,6 +60,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          department?: string | null
           category?: string | null
           created_at?: string | null
           created_by?: string
@@ -156,6 +165,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      set_user_department: { Args: { target_user_id: string; new_department: string }; Returns: undefined }
+      save_department_plan: { Args: { details: Json; participant_ids: string[]; target_plan_id?: string }; Returns: string }
       is_absolute_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean

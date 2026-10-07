@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { DashboardLayout } from "@/components/DashboardLayout";
@@ -12,7 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { ArrowLeft, Loader2, Save, Search } from "lucide-react";
 import { format } from "date-fns";
-import { ACTION_PLAN_CATEGORIES } from "@/lib/actionPlanCategories";
+
+import { useDepartments } from "@/hooks/use-departments";
 
 interface Professor {
   id: string;
@@ -27,11 +28,14 @@ export default function PlanForm() {
 
   const [loading, setLoading] = useState(false);
   const [professors, setProfessors] = useState<Professor[]>([]);
-  const [filteredProfessors, setFilteredProfessors] = useState<Professor[]>([]);
+  const departments = useDepartments();
+  const [canChooseDepartment, setCanChooseDepartment] = useState(false);
   const [selectedProfessors, setSelectedProfessors] = useState<string[]>([]);
+  const [participantsLoading, setParticipantsLoading] = useState(false);
   const [professorSearch, setProfessorSearch] = useState("");
   
   const [formData, setFormData] = useState({
+    department: "",
     title: "",
     description: "",
     objective: "",
@@ -43,7 +47,7 @@ export default function PlanForm() {
     end_date: "",
     status: "planning",
     priority: "medium",
-    category: "",
+    category: null as string | null,
   });
 
   useEffect(() => {
@@ -56,26 +60,18 @@ export default function PlanForm() {
 
       const { data: profile } = await supabase
         .from("profiles")
-        .select("role")
+        .select("role, department, is_absolute_admin")
         .eq("id", session.user.id)
         .single();
 
+      if (profile) {
+        setCanChooseDepartment(profile.role === "admin");
+        if (!isEditing) setFormData((current) => ({ ...current, department: profile.department || "" }));
+      }
       if (!profile || !["admin", "coordenador"].includes(profile.role)) {
         toast.error("Sem permissão para esta ação");
         navigate("/dashboard");
         return;
-      }
-    };
-
-    const fetchProfessors = async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, full_name, department")
-        .order("full_name");
-      
-      if (data) {
-        setProfessors(data);
-        setFilteredProfessors(data);
       }
     };
 
@@ -90,6 +86,7 @@ export default function PlanForm() {
 
       if (plan) {
         setFormData({
+          department: plan.department || "",
           title: plan.title,
           description: plan.description,
           objective: plan.objective,
@@ -101,7 +98,7 @@ export default function PlanForm() {
           end_date: plan.end_date,
           status: plan.status,
           priority: plan.priority,
-          category: plan.category || "",
+          category: plan.category,
         });
       }
 
@@ -116,36 +113,42 @@ export default function PlanForm() {
     };
 
     checkAuth();
-    fetchProfessors();
     fetchPlan();
   }, [navigate, id, isEditing]);
 
-  // Effect para filtrar professores baseado na busca
   useEffect(() => {
-    if (professorSearch.trim() === "") {
-      setFilteredProfessors(professors);
-    } else {
-      const filtered = professors.filter((prof) => {
-        const searchTerm = professorSearch.toLowerCase();
-        const fullName = prof.full_name.toLowerCase();
-        const department = prof.department?.toLowerCase() || "";
-        
-        // Verifica se alguma palavra do nome ou sobrenome começa com o termo de busca
-        const nameWords = fullName.split(" ");
-        const startsWithSearch = nameWords.some(word => word.startsWith(searchTerm));
-        
-        return startsWithSearch || 
-               fullName.includes(searchTerm) || 
-               department.includes(searchTerm);
-      });
-      setFilteredProfessors(filtered);
-    }
-  }, [professorSearch, professors]);
+    let active = true;
+    setProfessors([]);
+    if (!formData.department) { setParticipantsLoading(false); return; }
+    setParticipantsLoading(true);
+    const fetchParticipants = async () => {
+      const rows: Professor[] = [];
+      for (let offset = 0; ; offset += 1000) {
+        const { data, error } = await supabase.from("profiles").select("id, full_name, department")
+          .eq("department", formData.department).order("id").range(offset, offset + 999);
+        if (!active) return;
+        if (error) { setParticipantsLoading(false); toast.error("Não foi possível carregar os participantes"); return; }
+        rows.push(...(data || []));
+        if ((data?.length || 0) < 1000) break;
+      }
+      if (active) {
+        setProfessors(rows.sort((a, b) => a.full_name.localeCompare(b.full_name, "pt-BR")));
+        setParticipantsLoading(false);
+      }
+    };
+    fetchParticipants();
+    return () => { active = false; };
+  }, [formData.department]);
+
+  const filteredProfessors = useMemo(() => professors.filter((prof) =>
+    !!formData.department && prof.department === formData.department &&
+    prof.full_name.toLowerCase().includes(professorSearch.trim().toLowerCase())
+  ), [professors, professorSearch, formData.department]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.title || !formData.description || !formData.objective || !formData.category ||
+    if (!formData.department || !formData.title || !formData.description || !formData.objective ||
         !formData.expected_result || !formData.where_location ||
         !formData.how_to_execute || !formData.start_date || !formData.end_date) {
       toast.error("Preencha todos os campos obrigatórios");
@@ -169,46 +172,17 @@ export default function PlanForm() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Não autenticado");
 
-      let planId = id;
-
-      if (isEditing) {
-        const { error } = await supabase
-          .from("action_plans")
-          .update({ ...formData, estimated_cost: estimatedCost })
-          .eq("id", id);
-
-        if (error) throw error;
-      } else {
-        const { data: newPlan, error } = await supabase
-          .from("action_plans")
-          .insert({
-            ...formData,
-            estimated_cost: estimatedCost,
-            created_by: session.user.id,
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-        planId = newPlan.id;
-      }
-
-      // Update professor assignments
-      await supabase.from("plan_assignments").delete().eq("plan_id", planId);
-      
-      if (selectedProfessors.length > 0) {
-        const assignments = selectedProfessors.map((profId) => ({
-          plan_id: planId,
-          professor_id: profId,
-        }));
-
-        await supabase.from("plan_assignments").insert(assignments);
-      }
+      const { data: planId, error } = await supabase.rpc("save_department_plan", {
+        details: { ...formData, estimated_cost: estimatedCost },
+        participant_ids: selectedProfessors,
+        ...(isEditing ? { target_plan_id: id } : {}),
+      });
+      if (error) throw error;
 
       toast.success(isEditing ? "Plano atualizado!" : "Plano criado!");
       navigate(`/plans/${planId}`);
-    } catch (error: any) {
-      toast.error(error.message || "Erro ao salvar plano");
+    } catch (error: unknown) {
+      toast.error((error instanceof Error ? error.message : typeof error === "object" && error && "message" in error ? String(error.message) : "") || "Erro ao salvar plano");
     } finally {
       setLoading(false);
     }
@@ -354,21 +328,6 @@ export default function PlanForm() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="category">Área responsável</Label>
-                  <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
-                    <SelectTrigger id="category">
-                      <SelectValue placeholder="Selecione uma área" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ACTION_PLAN_CATEGORIES.map((category) => (
-                        <SelectItem key={category.value} value={category.value}>
-                          {category.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
                   <Label htmlFor="status">Status</Label>
                   <Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v })}>
                     <SelectTrigger id="status">
@@ -402,6 +361,23 @@ export default function PlanForm() {
           </Card>
 
           <Card>
+            <CardHeader><CardTitle>Departamento</CardTitle></CardHeader>
+            <CardContent className="space-y-2">
+              <Label htmlFor="plan-department">Departamento do plano *</Label>
+              <Select value={formData.department} disabled={isEditing && !!formData.department || !canChooseDepartment}
+                onValueChange={(department) => {
+                  setFormData({ ...formData, department });
+                  setSelectedProfessors([]);
+                  setProfessorSearch("");
+                }}>
+                <SelectTrigger id="plan-department"><SelectValue placeholder="Selecione o departamento" /></SelectTrigger>
+                <SelectContent>{departments.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}</SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground">Os participantes devem pertencer ao departamento escolhido.{!canChooseDepartment && !formData.department ? " Solicite ao Admin a definição do seu departamento." : ""}</p>
+            </CardContent>
+          </Card>
+
+          <Card>
             <CardHeader>
               <CardTitle>Participantes (Who) </CardTitle>
             </CardHeader>
@@ -409,7 +385,8 @@ export default function PlanForm() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground dark:text-white w-4 h-4" />
                 <Input
-                  placeholder="Buscar professores por nome ou departamento..."
+                  placeholder="Buscar participantes por nome..."
+                  disabled={!formData.department}
                   value={professorSearch}
                   onChange={(e) => setProfessorSearch(e.target.value)}
                   className="pl-10"
@@ -417,16 +394,18 @@ export default function PlanForm() {
               </div>
               
               <div className="space-y-2 max-h-96 overflow-y-auto">
-                {filteredProfessors.length === 0 ? (
+                {participantsLoading ? <p className="py-4 text-sm text-muted-foreground">Carregando participantes...</p> : filteredProfessors.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
-                    {professorSearch ? "Nenhum professor encontrado" : "Nenhum professor disponível"}
+                    {!formData.department ? "Selecione um departamento para escolher participantes" : "Nenhum participante encontrado neste departamento"}
                   </div>
                 ) : (
                   filteredProfessors.map((prof) => (
-                    <div
+                    <button
+                      type="button"
+                      aria-pressed={selectedProfessors.includes(prof.id)}
                       key={prof.id}
                       onClick={() => toggleProfessor(prof.id)}
-                      className={`p-3 rounded-lg border cursor-pointer transition-all hover:shadow-md ${
+                      className={`w-full text-left p-3 rounded-lg border transition-colors ${
                         selectedProfessors.includes(prof.id)
                           ? "bg-primary/10 border-primary"
                           : "bg-background border-border hover:bg-muted"
@@ -445,14 +424,14 @@ export default function PlanForm() {
                           </Badge>
                         )}
                       </div>
-                    </div>
+                    </button>
                   ))
                 )}
               </div>
               
               {selectedProfessors.length > 0 && (
                 <div className="text-sm text-muted-foreground">
-                  {selectedProfessors.length} professor(es) selecionado(s)
+                  {selectedProfessors.length} participante(s) selecionado(s)
                 </div>
               )}
             </CardContent>
@@ -462,7 +441,7 @@ export default function PlanForm() {
             <Button type="button" variant="outline" onClick={() => navigate("/plans")}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading || participantsLoading}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

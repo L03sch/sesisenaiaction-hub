@@ -19,6 +19,7 @@ import {
 
 interface AccessibilityButtonProps {
   sidebarOpen: boolean;
+  placement?: "sidebar" | "header";
 }
 
 const STORAGE_KEY = "accessibility-options";
@@ -41,7 +42,7 @@ function loadOptions() {
   return defaultOptions;
 }
 
-export function AccessibilityButton({ sidebarOpen }: AccessibilityButtonProps) {
+export function AccessibilityButton({ sidebarOpen, placement = "sidebar" }: AccessibilityButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [guideY, setGuideY] = useState(0);
   const ttsActiveRef = useRef(false);
@@ -130,8 +131,11 @@ export function AccessibilityButton({ sidebarOpen }: AccessibilityButtonProps) {
       <button
         onClick={() => setIsOpen(!isOpen)}
         title="Opções de Acessibilidade"
+        aria-label="Opções de acessibilidade"
+        aria-expanded={isOpen}
         className={cn(
-          "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all",
+          "flex items-center gap-3 rounded-md transition-colors",
+          placement === "header" ? "h-10 w-10 justify-center" : "w-full px-4 py-3",
           isOpen
             ? "bg-primary text-primary-foreground shadow-md"
             : "hover:bg-muted text-foreground"
@@ -167,14 +171,16 @@ export function AccessibilityButton({ sidebarOpen }: AccessibilityButtonProps) {
           className="accessibility-menu"
           style={{
             position: 'fixed',
-            left: sidebarOpen ? '272px' : '88px',
-            bottom: '80px',
+            left: placement === 'header' ? undefined : (sidebarOpen ? '272px' : '88px'),
+            right: placement === 'header' ? '16px' : undefined,
+            top: placement === 'header' ? '88px' : undefined,
+            bottom: placement === 'header' ? undefined : '80px',
             zIndex: 9998,
             maxHeight: '80vh',
             overflow: 'auto',
           }}
         >
-          <Card className="w-80 shadow-2xl border-2">
+          <Card className="w-80 max-w-[calc(100vw-2rem)] shadow-lg border">
             <CardHeader className="relative">
               <Button
                 variant="ghost"

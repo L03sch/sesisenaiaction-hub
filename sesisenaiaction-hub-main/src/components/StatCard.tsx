@@ -1,7 +1,5 @@
-import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { LucideIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface StatCardProps {
   title: string;
@@ -11,32 +9,14 @@ interface StatCardProps {
   variant?: "default" | "primary" | "secondary";
 }
 
-export function StatCard({ title, value, icon: Icon, loading, variant = "default" }: StatCardProps) {
-  const bgClass = {
-    default: "bg-muted",
-    primary: "bg-gradient-primary",
-    secondary: "bg-gradient-secondary",
-  }[variant];
-
-  const textClass = variant !== "default" ? "text-white" : "text-primary";
-
+export function StatCard({ title, value, icon: Icon, loading }: StatCardProps) {
   return (
-    <Card className="overflow-hidden">
-      <CardContent className="p-6">
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            {loading ? (
-              <Skeleton className="h-8 w-20" />
-            ) : (
-              <p className="text-3xl font-bold">{value}</p>
-            )}
-          </div>
-          <div className={cn("p-3 rounded-lg", bgClass)}>
-            <Icon className={cn("w-6 h-6", textClass)} />
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="px-5 py-5 sm:px-6">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        {loading ? <Skeleton className="h-9 w-16" /> : <p className="text-3xl font-semibold tabular-nums text-primary">{value}</p>}
+        <Icon className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+      </div>
+      <p className="text-sm text-muted-foreground">{title}</p>
+    </div>
   );
 }

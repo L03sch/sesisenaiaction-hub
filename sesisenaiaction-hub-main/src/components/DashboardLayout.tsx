@@ -73,11 +73,11 @@ export function DashboardLayout({ children }: { children: ReactNode }) {
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-auto gap-2 px-2 py-2" aria-label="Menu da conta">
+                <Button variant="ghost" className="h-auto gap-2 px-2 py-2 hover:bg-muted hover:text-foreground focus-visible:bg-muted focus-visible:text-foreground" aria-label="Menu da conta">
                   <User className="h-5 w-5 shrink-0" />
                   <span className="hidden max-w-40 text-left sm:block">
                     <span className="block truncate text-sm font-medium">{userName || "Minha conta"}</span>
-                    <span className="block text-xs font-normal text-muted-foreground">{roleLabel}</span>
+                    <span className="block text-xs font-normal text-black dark:text-white">{roleLabel}</span>
                   </span>
                   <ChevronDown className="h-4 w-4" />
                 </Button>

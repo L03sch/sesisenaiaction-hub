@@ -41,10 +41,10 @@ Deno.serve(async (request) => {
     const role = typeof body.user_role === "string" ? body.user_role : "";
     const department = typeof body.user_department === "string" ? body.user_department.trim() : null;
 
-    if (!email) return json({ error: "O email é obrigatório" }, 400);
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return json({ error: "Informe um email válido" }, 400);
     if (!fullName) return json({ error: "O nome é obrigatório" }, 400);
     if (password.length < 6) return json({ error: "A senha deve ter pelo menos 6 caracteres" }, 400);
-    if (!["professor", "coordenador"].includes(role)) {
+    if (!["professor", "coordenador", "admin"].includes(role)) {
       return json({ error: "Tipo de usuário inválido" }, 400);
     }
 

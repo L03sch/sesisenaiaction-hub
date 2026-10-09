@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Mail, Briefcase, Trash2 } from "lucide-react";
+import { Search, Mail, Briefcase, Trash2, Eye, EyeOff } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import {
@@ -74,9 +74,11 @@ export default function Users() {
   const [canDeleteUsers, setCanDeleteUsers] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [newUser, setNewUser] = useState({
     fullName: "",
     email: "",
+    password: "",
     role: "professor",
     department: "",
   });
@@ -208,10 +210,16 @@ export default function Users() {
     }
 
     setCreating(true);
+    if (newUser.password.length < 6) {
+      toast.error("A senha deve ter pelo menos 6 caracteres");
+      setCreating(false);
+      return;
+    }
     try {
-      const { data: result, error } = await supabase.functions.invoke("invite-user-account", {
+      const { error } = await supabase.functions.invoke("create-user-account", {
         body: {
           user_email: newUser.email,
+          user_password: newUser.password,
           user_full_name: newUser.fullName,
           user_role: newUser.role,
           user_department: newUser.department || null,
@@ -220,9 +228,9 @@ export default function Users() {
 
       if (error) throw error;
 
-      if (result?.warning) toast.warning(result.warning);
-      else toast.success("Convite enviado por email");
-      setNewUser({ fullName: "", email: "", role: "professor", department: "" });
+      toast.success("Usuário cadastrado. O envio de email ainda não está configurado.");
+      setNewUser({ fullName: "", email: "", password: "", role: "professor", department: "" });
+      setShowNewPassword(false);
       const { data } = await supabase.from("profiles").select("*").order("full_name");
       if (data) setProfessors(data);
     } catch (error: unknown) {
@@ -242,14 +250,14 @@ export default function Users() {
             <p className="text-muted-foreground">{canDeleteUsers ? "Visualize todos os usuários do sistema" : "Visualize os usuários do seu departamento"}</p>
           </div>
           {isAdmin && (
-            <Dialog>
+            <Dialog onOpenChange={(open) => { if (!open) { setNewUser((current) => ({ ...current, password: "" })); setShowNewPassword(false); } }}>
               <DialogTrigger asChild>
                 <Button>Convidar usuário</Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Convidar usuário</DialogTitle>
-                  <DialogDescription>Envie um convite para professor, coordenador ou administrador. A pessoa define sua própria senha.</DialogDescription>
+                  <DialogDescription>Cadastre professor, coordenador ou administrador com uma senha inicial. O envio automático de email ainda não está configurado.</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleCreateUser} className="space-y-4">
                   <div className="space-y-2">
@@ -259,6 +267,14 @@ export default function Users() {
                   <div className="space-y-2">
                     <Label htmlFor="new-user-email">Email</Label>
                     <Input id="new-user-email" type="email" value={newUser.email} onChange={(event) => setNewUser({ ...newUser, email: event.target.value })} disabled={creating} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="new-user-password">Senha inicial</Label>
+                    <div className="relative">
+                      <Input id="new-user-password" type={showNewPassword ? "text" : "password"} autoComplete="new-password" required minLength={6} value={newUser.password} onChange={(event) => setNewUser({ ...newUser, password: event.target.value })} disabled={creating} className="pr-12" aria-describedby="new-user-password-hint" />
+                      <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-0" disabled={creating} aria-label={showNewPassword ? "Ocultar senha" : "Mostrar senha"} aria-pressed={showNewPassword} onClick={() => setShowNewPassword((current) => !current)}>{showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button>
+                    </div>
+                    <p id="new-user-password-hint" className="text-xs text-muted-foreground">Use pelo menos 6 caracteres.</p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="new-user-role">Função</Label>
@@ -279,7 +295,7 @@ export default function Users() {
                     </Select>
                   </div>
                   <DialogFooter>
-                    <Button type="submit" disabled={creating}>{creating ? "Enviando..." : "Enviar convite"}</Button>
+                    <Button type="submit" disabled={creating}>{creating ? "Cadastrando..." : "Cadastrar usuário"}</Button>
                   </DialogFooter>
                 </form>
               </DialogContent>

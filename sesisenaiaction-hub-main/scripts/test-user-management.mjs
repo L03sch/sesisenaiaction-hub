@@ -81,9 +81,23 @@ for (const functionName of ["create-user-account", "delete-user-completely", "in
     assert.equal(calls.length, functionName !== "delete-user-completely" ? 3 : 1);
   });
 }
-test("account creation cannot grant admin privileges", async () => {
-  const { response, calls } = await invoke("create-user-account", { newRole: "admin" });
+test("account creation cannot grant principal admin privileges", async () => {
+  const { response, calls } = await invoke("create-user-account", { newRole: "absolute_admin" });
   assert.equal(response.status, 400); assert.equal(calls.length, 0);
+});
+test("principal can create an ordinary admin with a password and no department", async () => {
+  const { response, calls } = await invoke("create-user-account", { newRole: "admin", newDepartment: null });
+  assert.equal(response.status, 201);
+  assert.equal(calls[1][1].password, "test-password");
+  assert.equal(calls[1][1].app_metadata.user_role, "admin");
+  assert.equal(calls[1][1].user_metadata.department, null);
+  assert.equal(calls[1][1].user_metadata.is_absolute_admin, undefined);
+  assert.equal(calls[1][1].user_metadata.password, undefined);
+});
+test("ordinary admin cannot create another admin with a password", async () => {
+  const { response, calls } = await invoke("create-user-account", { absolute: false, newRole: "admin" });
+  assert.equal(response.status, 403);
+  assert.equal(calls.length, 0);
 });
 test("account creation stores authorization in app_metadata", async () => {
   const { calls } = await invoke("create-user-account");

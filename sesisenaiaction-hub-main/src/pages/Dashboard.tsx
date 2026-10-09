@@ -24,6 +24,7 @@ export default function Dashboard() {
   const [overview, setOverview] = useState({ planning: 0, inProgress: 0, completed: 0, cancelled: 0, overdue: 0, upcoming: 0 });
   const [loadFailed, setLoadFailed] = useState(false);
   const [userRole, setUserRole] = useState<string>("");
+  const [refreshVersion, setRefreshVersion] = useState(0);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -78,7 +79,7 @@ export default function Dashboard() {
     };
 
     checkAuth();
-  }, [navigate]);
+  }, [navigate, refreshVersion]);
 
   const canCreatePlan = ["admin", "coordenador"].includes(userRole);
 
@@ -143,7 +144,7 @@ export default function Dashboard() {
                 ...(overview.cancelled ? [{ label: "Cancelados", count: overview.cancelled }] : []),
               ].map((item) => <div key={item.label} className="grid grid-cols-[8.5rem_1fr_1.5rem] items-center gap-3 text-sm">
                 <span>{item.label}</span>
-                <div className="h-2 bg-muted" aria-hidden="true"><div className="h-full bg-primary" style={{ width: `${item.count / stats.totalPlans * 100}%` }} /></div>
+                <div className="h-2 bg-muted" aria-hidden="true"><div className={`h-full ${item.label === "Concluídos" ? "bg-green-600 dark:bg-green-500" : "bg-primary"}`} style={{ width: `${item.count / stats.totalPlans * 100}%` }} /></div>
                 <span className="text-right font-medium tabular-nums">{item.count}</span>
               </div>)}
             </CardContent>
@@ -152,14 +153,14 @@ export default function Dashboard() {
             <CardHeader className="border-b py-4"><CardTitle className="text-base">Atenção aos prazos</CardTitle></CardHeader>
             <CardContent className="pt-5">
               {loading ? <Skeleton className="h-32 w-full" /> : loadFailed ? <p className="text-sm text-muted-foreground">Prazos indisponíveis. Atualize a página.</p> : <>
-                <div className="flex items-center gap-4 border-b pb-4 text-destructive"><span className="text-3xl font-semibold tabular-nums">{overview.overdue}</span><span className="text-sm">{overview.overdue === 1 ? "plano atrasado" : "planos atrasados"}</span></div>
-                <div className="flex items-center gap-4 py-4 text-primary"><span className="text-3xl font-semibold tabular-nums">{overview.upcoming}</span><span className="text-sm">{overview.upcoming === 1 ? "vence nos próximos 7 dias" : "vencem nos próximos 7 dias"}</span></div>
+                <div className="flex items-center gap-4 border-b pb-4 text-destructive"><span className="text-3xl font-semibold tabular-nums">{overview.overdue}</span><span className="text-sm">{overview.overdue === 1 ? "Plano atrasado" : "Planos atrasados"}</span></div>
+                <div className="flex items-center gap-4 py-4 text-primary"><span className="text-3xl font-semibold tabular-nums">{overview.upcoming}</span><span className="text-sm">{overview.upcoming === 1 ? "Vence nos próximos 7 dias" : "Vencem nos próximos 7 dias"}</span></div>
               </>}
               <Button variant="link" className="h-auto px-0" onClick={() => navigate("/plans")}>Ver planos <ArrowRight className="ml-2 h-4 w-4" /></Button>
             </CardContent>
           </Card>
         </div>
-        <RecentPlans />
+        <RecentPlans key={refreshVersion} userRole={userRole} onDeleted={() => setRefreshVersion((current) => current + 1)} />
       </div>
     </DashboardLayout>
   );

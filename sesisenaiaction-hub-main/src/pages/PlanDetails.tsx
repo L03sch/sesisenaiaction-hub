@@ -311,7 +311,7 @@ export default function PlanDetails() {
               <p className="text-muted-foreground whitespace-pre-wrap">{plan.how_to_execute || "Não informado"}</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Resultado esperado</p>
+              <p className="text-sm text-muted-foreground">Motivo</p>
               <p className="text-muted-foreground whitespace-pre-wrap">{plan.expected_result || "Não informado"}</p>
             </div>
           </CardContent>

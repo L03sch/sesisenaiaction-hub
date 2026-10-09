@@ -32,6 +32,8 @@ export default function Plans() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [priorityFilter, setPriorityFilter] = useState("all");
   const [userRole, setUserRole] = useState<string>("");
 
   useEffect(() => {
@@ -66,18 +68,20 @@ export default function Plans() {
   }, [navigate]);
 
   useEffect(() => {
-    if (search || departmentFilter !== "all") {
+    if (search || departmentFilter !== "all" || statusFilter !== "all" || priorityFilter !== "all") {
       setFilteredPlans(
         plans.filter((plan) =>
           (!search || plan.title.toLowerCase().includes(search.toLowerCase()) ||
             plan.description.toLowerCase().includes(search.toLowerCase())) &&
-          (departmentFilter === "all" || plan.department === departmentFilter)
+          (departmentFilter === "all" || plan.department === departmentFilter) &&
+          (statusFilter === "all" || plan.status === statusFilter) &&
+          (priorityFilter === "all" || plan.priority === priorityFilter)
         )
       );
     } else {
       setFilteredPlans(plans);
     }
-  }, [search, departmentFilter, plans]);
+  }, [search, departmentFilter, statusFilter, priorityFilter, plans]);
 
   const canCreatePlan = ["admin", "coordenador"].includes(userRole);
 
@@ -127,19 +131,20 @@ export default function Plans() {
           )}
         </div>
 
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <div className="relative flex-1">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(240px,1fr)_240px_180px_180px]">
+          <div className="relative min-w-0">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground dark:text-white w-4 h-4" />
             <Input
               placeholder="Buscar planos..."
+              aria-label="Buscar planos"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-10"
             />
           </div>
           <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-            <SelectTrigger className="sm:w-64">
-              <SelectValue placeholder="Filtrar por área" />
+            <SelectTrigger aria-label="Filtrar por departamento">
+              <SelectValue placeholder="Filtrar por departamento" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os departamentos</SelectItem>
@@ -150,7 +155,31 @@ export default function Plans() {
               ))}
             </SelectContent>
           </Select>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger aria-label="Filtrar por status"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todos os status</SelectItem>
+              <SelectItem value="planning">Planejamento</SelectItem>
+              <SelectItem value="in_progress">Em Andamento</SelectItem>
+              <SelectItem value="completed">Concluído</SelectItem>
+              <SelectItem value="cancelled">Cancelado</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+            <SelectTrigger aria-label="Filtrar por prioridade"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas as prioridades</SelectItem>
+              <SelectItem value="urgent">Urgente</SelectItem>
+              <SelectItem value="high">Alta</SelectItem>
+              <SelectItem value="medium">Média</SelectItem>
+              <SelectItem value="low">Baixa</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
+        {(search || departmentFilter !== "all" || statusFilter !== "all" || priorityFilter !== "all") && <div className="flex items-center justify-between gap-3">
+          <p role="status" className="text-sm text-muted-foreground">{filteredPlans.length} plano{filteredPlans.length === 1 ? "" : "s"} encontrado{filteredPlans.length === 1 ? "" : "s"}</p>
+          <Button variant="ghost" size="sm" onClick={() => { setSearch(""); setDepartmentFilter("all"); setStatusFilter("all"); setPriorityFilter("all"); }}>Limpar filtros</Button>
+        </div>}
 
         {loading ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -162,7 +191,7 @@ export default function Plans() {
           <Card>
             <CardContent className="py-16 text-center">
               <p className="text-muted-foreground">
-                {search || departmentFilter !== "all" ? "Nenhum plano encontrado" : "Nenhum plano cadastrado ainda"}
+                {search || departmentFilter !== "all" || statusFilter !== "all" || priorityFilter !== "all" ? "Nenhum plano encontrado com esses filtros" : "Nenhum plano cadastrado ainda"}
               </p>
             </CardContent>
           </Card>

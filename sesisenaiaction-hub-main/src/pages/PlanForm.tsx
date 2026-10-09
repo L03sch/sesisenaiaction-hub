@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { ArrowLeft, Loader2, Save, Search } from "lucide-react";
@@ -206,19 +206,17 @@ export default function PlanForm() {
               {isEditing ? "Editar Plano" : "Novo Plano de Ação"}
             </h1>
             <p className="text-muted-foreground">
-              {isEditing ? "Atualize as informações do plano" : "Crie um novo plano de ação"}
+              {isEditing ? "Atualize as informações do plano" : "Organize a ação pelo método 5W2H: o quê, por quê, onde, quando, quem, como e quanto."}
             </p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Informações Básicas</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <Card className="shadow-none">
+            <CardHeader className="border-b pb-4"><CardTitle>O que será feito?</CardTitle><CardDescription>What · Defina a ação e o objetivo que pretende alcançar.</CardDescription></CardHeader>
+            <CardContent className="space-y-4 pt-5">
               <div className="space-y-2">
-                <Label htmlFor="title">Título (What) :</Label>
+                <Label htmlFor="title">Título da ação</Label>
                 <Input
                   id="title"
                   value={formData.title}
@@ -229,7 +227,7 @@ export default function PlanForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Descrição :</Label>
+                <Label htmlFor="description">Descrição da ação</Label>
                 <Textarea
                   id="description"
                   value={formData.description}
@@ -241,19 +239,24 @@ export default function PlanForm() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="objective">Objetivo (What) :</Label>
+                <Label htmlFor="objective">Objetivo</Label>
                 <Textarea
                   id="objective"
                   value={formData.objective}
                   onChange={(e) => setFormData({ ...formData, objective: e.target.value })}
-                  placeholder="Qual o objetivo deste plano?"
+                  placeholder="Que melhoria ou resultado a ação deve alcançar?"
                   rows={3}
                   required
                 />
               </div>
+            </CardContent>
+          </Card>
 
+          <Card className="shadow-none">
+            <CardHeader className="border-b pb-4"><CardTitle>Por que realizar esta ação?</CardTitle><CardDescription>Why · Registre o problema, a necessidade ou a oportunidade de melhoria.</CardDescription></CardHeader>
+            <CardContent className="space-y-4 pt-5">
               <div className="space-y-2">
-                <Label htmlFor="expected_result">Motivo (Why) :</Label>
+                <Label htmlFor="expected_result">Motivo e justificativa</Label>
                 <Textarea
                   id="expected_result"
                   value={formData.expected_result}
@@ -263,20 +266,158 @@ export default function PlanForm() {
                   required
                 />
               </div>
+            </CardContent>
+          </Card>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card className="shadow-none">
+            <CardHeader className="border-b pb-4"><CardTitle>Onde a ação será realizada?</CardTitle><CardDescription>Where · Identifique o ambiente de execução dentro da unidade de Blumenau.</CardDescription></CardHeader>
+            <CardContent className="space-y-4 pt-5">
                 <div className="space-y-2">
-                  <Label htmlFor="where_location">Onde será realizado? (Where) :</Label>
+                  <Label htmlFor="where_location">Local de execução</Label>
                   <Input
                     id="where_location"
                     value={formData.where_location}
                     onChange={(e) => setFormData({ ...formData, where_location: e.target.value })}
-                    placeholder="Ex: Unidade SESI Osasco"
+                    placeholder="Ex: Laboratório de automação — Blumenau"
                     required
                   />
                 </div>
+
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-none">
+            <CardHeader className="border-b pb-4"><CardTitle>Quando será realizada?</CardTitle><CardDescription>When · Estabeleça o período de execução e a data de conclusão.</CardDescription></CardHeader>
+            <CardContent className="space-y-4 pt-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="estimated_cost">Custo estimado (How Much) :</Label>
+                  <Label htmlFor="start_date">Data de início</Label>
+                  <Input
+                    id="start_date"
+                    type="date"
+                    value={formData.start_date}
+                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="end_date">Prazo de conclusão</Label>
+                  <Input
+                    id="end_date"
+                    type="date"
+                    value={formData.end_date}
+                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+
+
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader><CardTitle>Departamento</CardTitle></CardHeader>
+            <CardContent className="space-y-2">
+              <Label htmlFor="plan-department">Departamento do plano *</Label>
+              <Select value={formData.department} disabled={isEditing && !!formData.department || !canChooseDepartment}
+                onValueChange={(department) => {
+                  if (!department || !departments.includes(department)) return;
+                  setFormData({ ...formData, department });
+                  setSelectedProfessors([]);
+                  setProfessorSearch("");
+                }}>
+                <SelectTrigger id="plan-department"><SelectValue placeholder="Selecione o departamento" /></SelectTrigger>
+                <SelectContent>{departments.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}</SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground">Os participantes devem pertencer ao departamento escolhido.{!canChooseDepartment && !formData.department ? " Solicite ao Admin a definição do seu departamento." : ""}</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Quem participa da ação?</CardTitle>
+              <CardDescription>Who · Selecione as pessoas do departamento que executarão a ação.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground dark:text-white w-4 h-4" />
+                <Input
+                  placeholder="Buscar participantes por nome..."
+                  disabled={!formData.department}
+                  value={professorSearch}
+                  onChange={(e) => setProfessorSearch(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {participantsLoading ? <p className="py-4 text-sm text-muted-foreground">Carregando participantes...</p> : filteredProfessors.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    {!formData.department ? "Selecione um departamento para escolher participantes" : "Nenhum participante encontrado neste departamento"}
+                  </div>
+                ) : (
+                  filteredProfessors.map((prof) => (
+                    <button
+                      type="button"
+                      aria-pressed={selectedProfessors.includes(prof.id)}
+                      key={prof.id}
+                      onClick={() => toggleProfessor(prof.id)}
+                      className={`w-full text-left p-3 rounded-sm border transition-colors ${
+                        selectedProfessors.includes(prof.id)
+                          ? "bg-primary/10 border-primary"
+                          : "bg-background border-border hover:bg-muted"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="font-medium">{prof.full_name}</div>
+                          {prof.department && (
+                            <div className="text-sm text-muted-foreground">{prof.department}</div>
+                          )}
+                        </div>
+                        {selectedProfessors.includes(prof.id) && (
+                          <Badge variant="secondary" className="ml-2">
+                            Selecionado
+                          </Badge>
+                        )}
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+              
+              {selectedProfessors.length > 0 && (
+                <div className="text-sm text-muted-foreground">
+                  {selectedProfessors.length} participante(s) selecionado(s)
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-none">
+            <CardHeader className="border-b pb-4"><CardTitle>Como a ação será executada?</CardTitle><CardDescription>How · Detalhe as atividades, os recursos necessários e a sequência de execução.</CardDescription></CardHeader>
+            <CardContent className="space-y-4 pt-5">
+              <div className="space-y-2">
+                <Label htmlFor="how_to_execute">Etapas de execução</Label>
+                <Textarea
+                  id="how_to_execute"
+                  value={formData.how_to_execute}
+                  onChange={(e) => setFormData({ ...formData, how_to_execute: e.target.value })}
+                  placeholder="Descreva as etapas, recursos e abordagem da execução"
+                  rows={4}
+                  required
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-none">
+            <CardHeader className="border-b pb-4"><CardTitle>Quanto será investido?</CardTitle><CardDescription>How much · Estime o investimento necessário para executar a ação.</CardDescription></CardHeader>
+            <CardContent className="space-y-4 pt-5">
+                <div className="space-y-2">
+                  <Label htmlFor="estimated_cost">Custo estimado (R$)</Label>
                   <Input
                     id="estimated_cost"
                     type="number"
@@ -288,44 +429,15 @@ export default function PlanForm() {
                     required
                   />
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="how_to_execute">Como será realizado? (How) :</Label>
-                <Textarea
-                  id="how_to_execute"
-                  value={formData.how_to_execute}
-                  onChange={(e) => setFormData({ ...formData, how_to_execute: e.target.value })}
-                  placeholder="Descreva as etapas, recursos e abordagem da execução"
-                  rows={4}
-                  required
-                />
-              </div>
+              <p className="text-sm text-muted-foreground">Informe 0 quando a ação não exigir investimento adicional.</p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="start_date">Data de Início (When)</Label>
-                  <Input
-                    id="start_date"
-                    type="date"
-                    value={formData.start_date}
-                    onChange={(e) => setFormData({ ...formData, start_date: e.target.value })}
-                    required
-                  />
-                </div>
+            </CardContent>
+          </Card>
 
-                <div className="space-y-2">
-                  <Label htmlFor="end_date">Data de Término (When)</Label>
-                  <Input
-                    id="end_date"
-                    type="date"
-                    value={formData.end_date}
-                    onChange={(e) => setFormData({ ...formData, end_date: e.target.value })}
-                    required
-                  />
-                </div>
-              </div>
-
+          <Card className="shadow-none">
+            <CardHeader className="border-b pb-4"><CardTitle>Acompanhamento do plano</CardTitle><CardDescription>Defina a situação atual e a prioridade para acompanhamento.</CardDescription></CardHeader>
+            <CardContent className="space-y-4 pt-5">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="status">Status</Label>
@@ -357,83 +469,7 @@ export default function PlanForm() {
                   </Select>
                 </div>
               </div>
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardHeader><CardTitle>Departamento</CardTitle></CardHeader>
-            <CardContent className="space-y-2">
-              <Label htmlFor="plan-department">Departamento do plano *</Label>
-              <Select value={formData.department} disabled={isEditing && !!formData.department || !canChooseDepartment}
-                onValueChange={(department) => {
-                  setFormData({ ...formData, department });
-                  setSelectedProfessors([]);
-                  setProfessorSearch("");
-                }}>
-                <SelectTrigger id="plan-department"><SelectValue placeholder="Selecione o departamento" /></SelectTrigger>
-                <SelectContent>{departments.map((name) => <SelectItem key={name} value={name}>{name}</SelectItem>)}</SelectContent>
-              </Select>
-              <p className="text-sm text-muted-foreground">Os participantes devem pertencer ao departamento escolhido.{!canChooseDepartment && !formData.department ? " Solicite ao Admin a definição do seu departamento." : ""}</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Participantes (Who) </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground dark:text-white w-4 h-4" />
-                <Input
-                  placeholder="Buscar participantes por nome..."
-                  disabled={!formData.department}
-                  value={professorSearch}
-                  onChange={(e) => setProfessorSearch(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {participantsLoading ? <p className="py-4 text-sm text-muted-foreground">Carregando participantes...</p> : filteredProfessors.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    {!formData.department ? "Selecione um departamento para escolher participantes" : "Nenhum participante encontrado neste departamento"}
-                  </div>
-                ) : (
-                  filteredProfessors.map((prof) => (
-                    <button
-                      type="button"
-                      aria-pressed={selectedProfessors.includes(prof.id)}
-                      key={prof.id}
-                      onClick={() => toggleProfessor(prof.id)}
-                      className={`w-full text-left p-3 rounded-lg border transition-colors ${
-                        selectedProfessors.includes(prof.id)
-                          ? "bg-primary/10 border-primary"
-                          : "bg-background border-border hover:bg-muted"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="font-medium">{prof.full_name}</div>
-                          {prof.department && (
-                            <div className="text-sm text-muted-foreground">{prof.department}</div>
-                          )}
-                        </div>
-                        {selectedProfessors.includes(prof.id) && (
-                          <Badge variant="secondary" className="ml-2">
-                            Selecionado
-                          </Badge>
-                        )}
-                      </div>
-                    </button>
-                  ))
-                )}
-              </div>
-              
-              {selectedProfessors.length > 0 && (
-                <div className="text-sm text-muted-foreground">
-                  {selectedProfessors.length} participante(s) selecionado(s)
-                </div>
-              )}
             </CardContent>
           </Card>
 

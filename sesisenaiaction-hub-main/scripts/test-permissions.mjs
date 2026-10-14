@@ -24,6 +24,10 @@ test("Supabase permission regression suite", async (suite) => {
       CREATE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$
         SELECT NULLIF(current_setting('request.jwt.claim.sub', true), '')::uuid
       $$;
+      CREATE FUNCTION auth.jwt() RETURNS jsonb LANGUAGE sql STABLE AS $$
+        SELECT COALESCE(NULLIF(current_setting('request.jwt.claims', true), ''), '{}')::jsonb
+      $$;
+      CREATE TABLE auth.sessions(id uuid PRIMARY KEY,user_id uuid,created_at timestamptz);
       GRANT USAGE ON SCHEMA public, auth, storage TO anon, authenticated, service_role;
       GRANT EXECUTE ON FUNCTION auth.uid() TO anon, authenticated, service_role;
       CREATE TABLE storage.buckets (id text PRIMARY KEY, name text, public boolean,
@@ -36,7 +40,7 @@ test("Supabase permission regression suite", async (suite) => {
     `);
     // PGlite includes UUID generation natively; the legacy uuid-ossp extension
     // is the only production migration dependency substituted by this harness.
-    for (const name of (await readdir("supabase/migrations")).filter((name) => name.endsWith(".sql") && !name.endsWith("_department_isolation.sql") && !name.endsWith("_department_rpc_hardening.sql")).sort()) {
+    for (const name of (await readdir("supabase/migrations")).filter((name) => name.endsWith(".sql") && !name.endsWith("_department_isolation.sql") && !name.endsWith("_department_rpc_hardening.sql") && !name.endsWith("_require_personal_password.sql")).sort()) {
       const sql = (await readFile(`supabase/migrations/${name}`, "utf8"))
         .replace(/CREATE EXTENSION IF NOT EXISTS "uuid-ossp";/g, "")
         .replace(/uuid_generate_v4\(\)/g, "gen_random_uuid()");
@@ -252,6 +256,8 @@ test("Supabase permission regression suite", async (suite) => {
     await db.exec(await readFile(`supabase/migrations/${departmentMigration}`,"utf8"));
     const rpcMigration = (await readdir("supabase/migrations")).find((name) => name.endsWith("_department_rpc_hardening.sql"));
     await db.exec(await readFile(`supabase/migrations/${rpcMigration}`,"utf8"));
+    const passwordMigration = (await readdir("supabase/migrations")).find(name=>name.endsWith("_require_personal_password.sql"));
+    await db.exec(await readFile(`supabase/migrations/${passwordMigration}`,"utf8"));
     const otherPlan = "10000000-0000-0000-0000-000000000003";
     await db.query("INSERT INTO public.action_plans(id,title,description,objective,start_date,end_date,created_by,department) VALUES ($1,'Other','Test','Test','2026-10-01','2026-10-02',$2,'Tecnologia da Informação')",[otherPlan,ids.admin]);
     await db.query("INSERT INTO public.plan_assignments(plan_id,professor_id) VALUES ($1,$2)",[otherPlan,ids.outsider]);
@@ -318,6 +324,44 @@ test("Supabase permission regression suite", async (suite) => {
       await denied("SELECT public.save_department_plan($1,$2)",[payload,[ids.outsider]],"23514");
       await db.exec("ROLLBACK TO SAVEPOINT failed_save");
       assert.equal((await query("SELECT count(*) FROM public.action_plans")).rows[0].count,count);
+    });
+    for (const role of ["professor","coordenador","admin"]) {
+      await suite.test(`${role}: database blocks all application data until personal password is set`,async()=>{
+        await db.exec("BEGIN");
+        try {
+          await query("UPDATE auth.users SET raw_app_meta_data=raw_app_meta_data || '{\"must_change_password\":true}'::jsonb WHERE id=$1",[ids[role]]);
+          await query("SELECT set_config('request.jwt.claim.sub',$1,true)",[ids[role]]);
+          await query("SELECT set_config('request.jwt.claims',$1,true)",[JSON.stringify({app_metadata:{must_change_password:false}})]);
+          await db.exec("SET LOCAL ROLE authenticated");
+          for(const table of ["profiles","departments","action_plans","plan_assignments"]) assert.equal((await query(`SELECT * FROM public.${table}`)).rows.length,0);
+          assert.equal((await query("SELECT public.password_setup_complete() AS ready")).rows[0].ready,false);
+          await db.exec("SAVEPOINT denied_rpc");
+          await denied("SELECT public.set_user_department($1,'Mecânica')",[ids.coordenador]);
+          await db.exec("ROLLBACK TO SAVEPOINT denied_rpc");
+          await db.exec("SAVEPOINT denied_metadata");
+          await denied("UPDATE auth.users SET raw_app_meta_data='{}'");
+          await db.exec("ROLLBACK TO SAVEPOINT denied_metadata");
+          assert.equal((await query("UPDATE public.action_plans SET title='Bypass' RETURNING id")).rows.length,0);
+          assert.equal((await query("DELETE FROM public.action_plans RETURNING id")).rows.length,0);
+        } finally { await db.exec("ROLLBACK"); }
+      });
+    }
+    await suite.test("old and missing sessions cannot regain access after password reset, even with refreshed JWT claims",async()=>{
+      await db.exec("BEGIN");
+      try {
+        const oldSession="70000000-0000-0000-0000-000000000001",newSession="70000000-0000-0000-0000-000000000002";
+        await query("UPDATE auth.users SET raw_app_meta_data=raw_app_meta_data || $2::jsonb WHERE id=$1",[ids.professor,JSON.stringify({must_change_password:false,initial_password_changed_at:"2026-10-14T12:00:00Z"})]);
+        await query("INSERT INTO auth.sessions(id,user_id,created_at) VALUES ($1,$3,'2026-10-14T11:59:59Z'),($2,$3,'2026-10-14T12:00:01Z')",[oldSession,newSession,ids.professor]);
+        await query("SELECT set_config('request.jwt.claim.sub',$1,true)",[ids.professor]);await db.exec("SET LOCAL ROLE authenticated");
+        for(const session of [oldSession,"missing-session"]) {
+          await query("SELECT set_config('request.jwt.claims',$1,true)",[JSON.stringify({session_id:session,app_metadata:{must_change_password:false}})]);
+          assert.equal((await query("SELECT public.password_setup_complete() AS ready")).rows[0].ready,false);
+          assert.equal((await query("SELECT * FROM public.action_plans")).rows.length,0);
+        }
+        await query("SELECT set_config('request.jwt.claims',$1,true)",[JSON.stringify({session_id:newSession})]);
+        assert.equal((await query("SELECT public.password_setup_complete() AS ready")).rows[0].ready,true);
+        assert.equal((await query("SELECT * FROM public.action_plans")).rows.length,1);
+      } finally { await db.exec("ROLLBACK"); }
     });
   } finally { await db.close(); }
 });

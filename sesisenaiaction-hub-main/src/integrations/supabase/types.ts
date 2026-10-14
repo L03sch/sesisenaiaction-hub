@@ -165,6 +165,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      password_setup_complete: { Args: Record<string, never>; Returns: boolean };
       set_user_department: { Args: { target_user_id: string; new_department: string }; Returns: undefined }
       save_department_plan: { Args: { details: Json; participant_ids: string[]; target_plan_id?: string }; Returns: string }
       is_absolute_admin: {

@@ -1,3 +1,5 @@
+import { internalFailure } from "../_shared/errors.ts";
+import { personalPasswordReady } from "../_shared/password-access.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.58.0";
 
 const corsHeaders = {
@@ -28,13 +30,15 @@ Deno.serve(async (request) => {
 
     const { data: caller, error: callerError } = await admin.auth.getUser(authorization.slice(7));
     if (callerError || !caller.user) return json({ error: "Sessão inválida" }, 401);
+    if (!await personalPasswordReady(caller.user, authorization)) return json({ error: "Defina sua senha pessoal antes de continuar" }, 403);
     const { data: callerProfile, error: profileError } = await admin
       .from("profiles").select("role,is_absolute_admin").eq("id", caller.user.id).single();
     if (profileError || callerProfile?.role !== "admin") {
       return json({ error: "Apenas administradores podem excluir usuários" }, 403);
     }
 
-    const body = await request.json();
+    let body;
+    try { body = await request.json(); } catch { return json({ error: "Dados inválidos" }, 400); }
     const userId = typeof body.user_id === "string" ? body.user_id : "";
     if (!userId) return json({ error: "O usuário é obrigatório" }, 400);
     if (userId === caller.user.id) {
@@ -66,6 +70,6 @@ Deno.serve(async (request) => {
 
     return json({ success: true });
   } catch (error) {
-    return json({ error: error instanceof Error ? error.message : "Erro interno" }, 500);
+    return internalFailure("delete-user-completely", error, corsHeaders);
   }
 });

@@ -20,6 +20,7 @@ jobs:
           cache-dependency-path: sesisenaiaction-hub-main/package-lock.json
       - run: npm ci
       - run: npm run build
+      - run: npm run test:security
       - run: npx tsc --noEmit -p tsconfig.app.json
       - run: node --test scripts/test-user-management.mjs
       - name: Install isolated PostgreSQL test runtime

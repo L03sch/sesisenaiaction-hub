@@ -5,12 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "build:dev": "vite build --mode development",
+    "build": "vite build && node scripts/generate-hosting.mjs",
+    "build:dev": "vite build --mode development && node scripts/generate-hosting.mjs development",
     "lint": "eslint .",
     "preview": "vite preview",
     "start": "node scripts/serve-secure.mjs",
-    "test:security": "node --test scripts/test-security.mjs"
+    "test:security": "node --test scripts/test-security.mjs",
+    "verify:hosting": "node scripts/verify-hosting.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

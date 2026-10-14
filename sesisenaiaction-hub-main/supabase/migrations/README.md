@@ -34,6 +34,12 @@ Este diretório contém as migrações do banco de dados do projeto SESI SENAI A
 
 ## 🚀 Como Aplicar Migrações
 
+Antes de inicializar um projeto vazio, executar `../preflight.sql` e conferir
+`service_schema_ready = true`. Campos ausentes do Storage são um problema do
+serviço Supabase: não adicionar colunas manualmente nem remover os limites do
+bucket para contornar o erro. Consulte `../INITIALIZATION.md` para o diagnóstico
+e as condições de retomada do projeto Plan-Action.
+
 ### Opção 1: Dashboard do Supabase (Recomendado para produção)
 1. Acesse https://supabase.com/dashboard
 2. Selecione seu projeto

@@ -1,3 +1,4 @@
+import { passwordError, PASSWORD_HINT, PASSWORD_MIN_LENGTH } from "../../supabase/functions/_shared/password-policy";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -210,8 +211,8 @@ export default function Users() {
     }
 
     setCreating(true);
-    if (newUser.password.length < 6) {
-      toast.error("A senha deve ter pelo menos 6 caracteres");
+    if (passwordError(newUser.password)) {
+      toast.error(passwordError(newUser.password)!);
       setCreating(false);
       return;
     }
@@ -271,10 +272,10 @@ export default function Users() {
                   <div className="space-y-2">
                     <Label htmlFor="new-user-password">Senha inicial</Label>
                     <div className="relative">
-                      <Input id="new-user-password" type={showNewPassword ? "text" : "password"} autoComplete="new-password" required minLength={6} value={newUser.password} onChange={(event) => setNewUser({ ...newUser, password: event.target.value })} disabled={creating} className="pr-12" aria-describedby="new-user-password-hint" />
+                      <Input id="new-user-password" type={showNewPassword ? "text" : "password"} autoComplete="new-password" required minLength={PASSWORD_MIN_LENGTH} value={newUser.password} onChange={(event) => setNewUser({ ...newUser, password: event.target.value })} disabled={creating} className="pr-12" aria-describedby="new-user-password-hint" />
                       <Button type="button" variant="ghost" size="icon" className="absolute right-1 top-0" disabled={creating} aria-label={showNewPassword ? "Ocultar senha" : "Mostrar senha"} aria-pressed={showNewPassword} onClick={() => setShowNewPassword((current) => !current)}>{showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</Button>
                     </div>
-                    <p id="new-user-password-hint" className="text-xs text-muted-foreground">Use pelo menos 6 caracteres.</p>
+                    <p id="new-user-password-hint" className="text-xs text-muted-foreground">{PASSWORD_HINT} A senha deverá ser trocada no primeiro acesso.</p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="new-user-role">Função</Label>

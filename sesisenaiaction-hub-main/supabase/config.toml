@@ -8,3 +8,10 @@ verify_jwt = true
 
 [functions.invite-user-account]
 verify_jwt = true
+
+[auth]
+minimum_password_length = 12
+password_requirements = "lower_upper_letters_digits_symbols"
+
+[functions.complete-initial-password]
+verify_jwt = true

@@ -1,3 +1,4 @@
+import { RequirePersonalPassword } from "@/components/RequirePersonalPassword";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -27,14 +28,14 @@ const App = () => (
           <Routes>
             <Route path="/" element={<IndexWithSplash />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/plans" element={<Plans />} />
-            <Route path="/plans/new" element={<PlanForm />} />
-            <Route path="/plans/:id" element={<PlanDetails />} />
-            <Route path="/plans/:id/edit" element={<PlanForm />} />
-            <Route path="/users" element={<Users />} />
-            <Route path="/account" element={<Account />} />
-            <Route path="/support" element={<Support />} />
+            <Route path="/dashboard" element={<RequirePersonalPassword><Dashboard /></RequirePersonalPassword>} />
+            <Route path="/plans" element={<RequirePersonalPassword><Plans /></RequirePersonalPassword>} />
+            <Route path="/plans/new" element={<RequirePersonalPassword><PlanForm /></RequirePersonalPassword>} />
+            <Route path="/plans/:id" element={<RequirePersonalPassword><PlanDetails /></RequirePersonalPassword>} />
+            <Route path="/plans/:id/edit" element={<RequirePersonalPassword><PlanForm /></RequirePersonalPassword>} />
+            <Route path="/users" element={<RequirePersonalPassword><Users /></RequirePersonalPassword>} />
+            <Route path="/account" element={<RequirePersonalPassword><Account /></RequirePersonalPassword>} />
+            <Route path="/support" element={<RequirePersonalPassword><Support /></RequirePersonalPassword>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

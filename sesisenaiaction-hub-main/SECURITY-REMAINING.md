@@ -20,4 +20,12 @@ KAN-26 e KAN-28: código já integrado no PR #13. Nova consulta em 15/10/2026 re
 
 ## Hospedagem — responsável no Jira: Bruno Loesch da Cunha
 
-KAN-27: verificação HTTP em 15/10/2026 ainda falhou nas rotas /auth, /dashboard e /plans para CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy e HSTS. O código de geração e servidor seguro já existe na main; a tarefa só pode ser encerrada após aplicar a configuração à hospedagem real e passar scripts/verify-hosting.mjs no endereço público.
+KAN-27: concluída na hospedagem em 15/10/2026. A primeira tentativa com _headers demonstrou que o modo estático de Sites não aplica essa configuração. Foi publicado um Worker ESM no mesmo site e com a mesma audiência, incorporando o HTML, imagens e assets da versão existente sem alteração de bytes. O gerador scripts/build-sites-worker.mjs aplica a política compartilhada de scripts/security-headers.mjs a páginas, assets e erros; o teste cobre SPA, arquivos binários, HEAD, 400, 404 e 405.
+
+Versão Sites 17; commit do repositório de hospedagem 0f7a7b823c924783e43550e4891152c4589febd2. Após publicar, scripts/verify-hosting.mjs passou em https://plan-action-sesi-senai.jean-franco-junior.chatgpt.site nas rotas /auth, /dashboard e /plans, verificando CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, HSTS e resposta SPA. Não foram antecipadas mudanças de frontend dependentes do Supabase. O backend continua com o bloqueio descrito acima.
+
+Para gerar o módulo a partir de um build revisado:
+
+    node scripts/build-sites-worker.mjs dist /caminho/worker/index.js https://inlbptawboswnwdqlnlm.supabase.co
+
+No checkout próprio de Sites, preservar o project_id e a audiência, usar o manifesto Worker sem static e o fluxo oficial de salvar/publicar versão. O módulo é a saída, não deve ser gerado dentro da própria pasta de entrada. Revalidar o domínio após cada publicação; publicar dist diretamente como site estático voltará a perder os cabeçalhos.

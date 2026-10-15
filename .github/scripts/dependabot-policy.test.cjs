@@ -41,3 +41,47 @@ test("uses latest rerun and does not accept an older success", () => {
   const x = sample(); x.checks.unshift({ name: "permissions", status: "completed", conclusion: "failure" }); assert.ok(eligible(x));
   x.checks[0].conclusion = "success"; x.checks.push({ name: "permissions", status: "completed", conclusion: "failure" }); assert.equal(eligible(x), null);
 });
+
+const run = require("./dependabot-automerge.cjs");
+function harness(errorMessage, changedHead = false) {
+  const x = sample();
+  x.branch.commit = { sha: "base-sha" };
+  x.pr.head.sha = "tested-sha";
+  x.pr.node_id = "PR_test";
+  let reads = 0;
+  const merges = [];
+  const listChecks = () => {};
+  const listStatuses = () => {};
+  const github = {
+    rest: {
+      repos: {
+        get: async () => ({ data: x.repository }),
+        getBranch: async () => ({ data: x.branch }),
+        compareCommits: async () => ({ data: { status: "ahead" } }),
+        listCommitStatusesForRef: listStatuses,
+      },
+      pulls: {
+        get: async () => ({ data: { ...x.pr, head: { ...x.pr.head, sha: changedHead && ++reads > 1 ? "new-sha" : "tested-sha" } } }),
+        merge: async args => { merges.push(args); return { data: { merged: true } }; },
+      },
+      checks: { listForRef: listChecks },
+    },
+    paginate: async endpoint => endpoint === listChecks ? x.checks : [],
+    graphql: async () => { if (errorMessage) throw new Error(errorMessage); return {}; },
+  };
+  return { merges, options: { github, context: { repo: { owner: "L03sch", repo: "sesisenaiaction-hub" }, payload: { pull_request: { number: 22 } } }, core: { info() {}, setFailed(message) { throw new Error(message); } } } };
+}
+test("only requests native auto-merge when queuing succeeds", async () => {
+  const x = harness(); await run(x.options); assert.equal(x.merges.length, 0);
+});
+test("already-clean fallback merges only the tested SHA", async () => {
+  const x = harness("Pull request Pull request is in clean status"); await run(x.options);
+  assert.equal(x.merges.length, 1); assert.equal(x.merges[0].sha, "tested-sha");
+});
+test("permission failures never fall back to merge", async () => {
+  const x = harness("Resource not accessible by integration");
+  await assert.rejects(run(x.options), /Resource not accessible/); assert.equal(x.merges.length, 0);
+});
+test("changed HEAD blocks all merge requests", async () => {
+  const x = harness("Pull request is in clean status", true); await run(x.options); assert.equal(x.merges.length, 0);
+});

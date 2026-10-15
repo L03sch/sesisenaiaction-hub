@@ -33,7 +33,17 @@ module.exports = async ({ github, context, core }) => {
       continue;
     }
     if (current.auto_merge) { core.info(`#${pull_number}: auto-merge já habilitado.`); continue; }
-    await github.graphql(`mutation($id: ID!) { enablePullRequestAutoMerge(input: {pullRequestId: $id, mergeMethod: SQUASH}) { pullRequest { number } } }`, { id: current.node_id });
+    try {
+      await github.graphql(`mutation($id: ID!) { enablePullRequestAutoMerge(input: {pullRequestId: $id, mergeMethod: SQUASH}) { pullRequest { number } } }`, { id: current.node_id });
+    } catch (error) {
+      // GitHub can refuse queuing an already fully approved, clean PR.
+      // Only this precise response allows the ordinary protected merge endpoint.
+      if (!/Pull request is in clean status/.test(error.message)) throw error;
+      const { data: merged } = await github.rest.pulls.merge({ owner, repo, pull_number, sha: ref, merge_method: "squash" });
+      if (!merged.merged) throw new Error(`GitHub não integrou o PR #${pull_number}.`);
+      core.info(`#${pull_number}: merge automático concluído com o SHA verificado; proteções nativas respeitadas.`);
+      break; // Remaining PRs must be checked again against the new main.
+    }
     core.info(`#${pull_number}: auto-merge nativo habilitado após validação do HEAD ${ref}.`);
   }
 };

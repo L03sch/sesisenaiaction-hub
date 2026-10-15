@@ -16,6 +16,8 @@ Somente PRs do usuário `dependabot[bot]`, do próprio repositório para `main`,
 
 O workflow usa auto-merge nativo e respeita regras/revisões do GitHub; não aprova PRs, não ignora proteções e não resolve conflitos automaticamente. Revalida o HEAD antes de habilitar a integração. Atualizações major também são elegíveis se atenderem aos critérios, conforme o pedido de automatizar os PRs; CI aprovado não garante ausência de incompatibilidade funcional não coberta por testes.
 
+Se o GitHub recusar a fila com a resposta específica `Pull request is in clean status`, o PR já passou pelas mesmas verificações e pode estar pronto para integração imediata. Nesse caso, o workflow usa o endpoint normal de merge com o SHA esperado, sujeito às proteções nativas; qualquer outra falha é propagada. Depois de integrar um PR, interrompe o ciclo para reavaliar os restantes contra a nova main.
+
 O workflow privilegiado só executa código da `main`, sem instalar dependências, executar código do PR ou consumir artefatos dele. O workflow de regressão permanece com acesso de leitura.
 
 ## PRs existentes

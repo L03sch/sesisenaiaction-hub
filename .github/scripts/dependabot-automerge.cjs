@@ -1,5 +1,21 @@
 const { eligible } = require("./dependabot-policy.cjs");
 
+async function validationChecks(github, owner, repo, checks) {
+  const result = [];
+  for (const check of checks) {
+    // The controller must not wait for its own pending/previous failed job.
+    // Verify the producing workflow, not just its spoofable check name.
+    const prefix = `https://github.com/${owner}/${repo}/actions/runs/`;
+    const match = check.details_url?.startsWith(prefix) && check.details_url.slice(prefix.length).match(/^(\d+)\/job\/\d+$/);
+    if (check.name === "enable" && check.app?.slug === "github-actions" && match) {
+      const { data: run } = await github.rest.actions.getWorkflowRun({ owner, repo, run_id: Number(match[1]) });
+      if (run.path === ".github/workflows/dependabot-automerge.yml") continue;
+    }
+    result.push(check);
+  }
+  return result;
+}
+
 module.exports = async ({ github, context, core }) => {
   const { owner, repo } = context.repo;
   const numbers = context.payload.pull_request
@@ -20,7 +36,8 @@ module.exports = async ({ github, context, core }) => {
     const ref = pr.head.sha;
     const { data: comparison } = await github.rest.repos.compareCommits({ owner, repo, base: branch.commit.sha, head: ref });
     const upToDate = ["ahead", "identical"].includes(comparison.status);
-    const checks = await github.paginate(github.rest.checks.listForRef, { owner, repo, ref, filter: "latest", per_page: 100 });
+    const allChecks = await github.paginate(github.rest.checks.listForRef, { owner, repo, ref, filter: "latest", per_page: 100 });
+    const checks = await validationChecks(github, owner, repo, allChecks);
     const statuses = await github.paginate(github.rest.repos.listCommitStatusesForRef, { owner, repo, ref, per_page: 100 });
     const reason = eligible({ pr, repository, branch, upToDate, checks, statuses });
     if (reason) { core.info(`#${pull_number}: ${reason}`); continue; }
@@ -47,3 +64,4 @@ module.exports = async ({ github, context, core }) => {
     core.info(`#${pull_number}: auto-merge nativo habilitado após validação do HEAD ${ref}.`);
   }
 };
+module.exports.validationChecks = validationChecks;

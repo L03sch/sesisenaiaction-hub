@@ -24,6 +24,7 @@ jobs:
       pull-requests: write
       checks: read
       statuses: read
+      actions: read
     steps:
       # Only trusted main is checked out. Never execute PR code or download its artifacts here.
       - uses: actions/checkout@v7

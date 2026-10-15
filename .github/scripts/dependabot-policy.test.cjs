@@ -93,3 +93,14 @@ test("review-blocked PR can only be queued, never immediately merged", async () 
 test("changed HEAD blocks all merge requests", async () => {
   const x = harness("Pull request is in clean status", true); await run(x.options); assert.equal(x.merges.length, 0);
 });
+test("ignores only the controller's own identified workflow check", async () => {
+  const check = { name: "enable", app: { slug: "github-actions" }, details_url: "https://github.com/L03sch/sesisenaiaction-hub/actions/runs/123/job/456", conclusion: "failure" };
+  const github = { rest: { actions: { getWorkflowRun: async () => ({ data: { path: ".github/workflows/dependabot-automerge.yml" } }) } } };
+  assert.deepEqual(await run.validationChecks(github, "L03sch", "sesisenaiaction-hub", [check]), []);
+  github.rest.actions.getWorkflowRun = async () => ({ data: { path: ".github/workflows/other.yml" } });
+  assert.deepEqual(await run.validationChecks(github, "L03sch", "sesisenaiaction-hub", [check]), [check]);
+});
+test("a check name or foreign URL cannot spoof the controller", async () => {
+  const check = { name: "enable", app: { slug: "github-actions" }, details_url: "https://github.com/other/repo/actions/runs/123/job/456" };
+  assert.deepEqual(await run.validationChecks({}, "L03sch", "sesisenaiaction-hub", [check]), [check]);
+});

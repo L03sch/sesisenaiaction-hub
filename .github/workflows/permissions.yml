@@ -19,6 +19,8 @@ jobs:
           cache: npm
           cache-dependency-path: sesisenaiaction-hub-main/package-lock.json
       - run: npm ci
+      - name: Test Dependabot merge gates
+        run: node --test ../.github/scripts/dependabot-policy.test.cjs
       - run: npm run build
       - run: npm run test:security
       - run: npx tsc --noEmit -p tsconfig.app.json

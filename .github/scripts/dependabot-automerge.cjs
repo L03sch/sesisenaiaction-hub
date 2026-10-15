@@ -28,7 +28,7 @@ module.exports = async ({ github, context, core }) => {
     // remains the authority if the base branch changes after these checks.
     const { data: current } = await github.rest.pulls.get({ owner, repo, pull_number });
     const { data: currentBase } = await github.rest.repos.getBranch({ owner, repo, branch: "main" });
-    if (currentBase.commit.sha !== branch.commit.sha || current.head.sha !== ref || current.state !== "open" || current.draft || current.mergeable !== true || current.mergeable_state !== "clean") {
+    if (currentBase.commit.sha !== branch.commit.sha || current.head.sha !== ref || current.state !== "open" || current.draft || current.mergeable !== true || !["clean", "blocked"].includes(current.mergeable_state)) {
       core.info(`#${pull_number}: estado alterado durante a verificação.`);
       continue;
     }
@@ -38,7 +38,7 @@ module.exports = async ({ github, context, core }) => {
     } catch (error) {
       // GitHub can refuse queuing an already fully approved, clean PR.
       // Only this precise response allows the ordinary protected merge endpoint.
-      if (!/Pull request is in clean status/.test(error.message)) throw error;
+      if (current.mergeable_state !== "clean" || !/Pull request is in clean status/.test(error.message)) throw error;
       const { data: merged } = await github.rest.pulls.merge({ owner, repo, pull_number, sha: ref, merge_method: "squash" });
       if (!merged.merged) throw new Error(`GitHub não integrou o PR #${pull_number}.`);
       core.info(`#${pull_number}: merge automático concluído com o SHA verificado; proteções nativas respeitadas.`);

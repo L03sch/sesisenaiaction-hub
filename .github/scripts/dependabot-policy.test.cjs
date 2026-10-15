@@ -12,6 +12,9 @@ function sample() {
   };
 }
 test("allows only a protected, fully checked Dependabot PR", () => assert.equal(eligible(sample()), null));
+test("can queue a fully checked PR while GitHub waits for approval", () => {
+  const x = sample(); x.pr.mergeable_state = "blocked"; assert.equal(eligible(x), null);
+});
 for (const [name, change] of [
   ["disabled repository setting", x => { x.repository.allow_auto_merge = false; }],
   ["human PR", x => { x.pr.user.login = "someone"; }],
@@ -43,11 +46,12 @@ test("uses latest rerun and does not accept an older success", () => {
 });
 
 const run = require("./dependabot-automerge.cjs");
-function harness(errorMessage, changedHead = false) {
+function harness(errorMessage, changedHead = false, mergeState = "clean") {
   const x = sample();
   x.branch.commit = { sha: "base-sha" };
   x.pr.head.sha = "tested-sha";
   x.pr.node_id = "PR_test";
+  x.pr.mergeable_state = mergeState;
   let reads = 0;
   const merges = [];
   const listChecks = () => {};
@@ -81,6 +85,10 @@ test("already-clean fallback merges only the tested SHA", async () => {
 test("permission failures never fall back to merge", async () => {
   const x = harness("Resource not accessible by integration");
   await assert.rejects(run(x.options), /Resource not accessible/); assert.equal(x.merges.length, 0);
+});
+test("review-blocked PR can only be queued, never immediately merged", async () => {
+  const x = harness("Pull request is in clean status", false, "blocked");
+  await assert.rejects(run(x.options)); assert.equal(x.merges.length, 0);
 });
 test("changed HEAD blocks all merge requests", async () => {
   const x = harness("Pull request is in clean status", true); await run(x.options); assert.equal(x.merges.length, 0);

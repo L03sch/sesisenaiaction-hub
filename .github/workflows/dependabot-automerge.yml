@@ -1,0 +1,37 @@
+name: Dependabot auto-merge
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+  workflow_run:
+    workflows: [Permission regression checks, CodeQL security analysis]
+    types: [completed]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: dependabot-automerge
+  cancel-in-progress: false
+jobs:
+  enable:
+    if: >-
+      github.repository == 'L03sch/sesisenaiaction-hub' &&
+      (github.event_name != 'pull_request_target' || github.event.pull_request.user.login == 'dependabot[bot]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: read
+      statuses: read
+    steps:
+      # Only trusted main is checked out. Never execute PR code or download its artifacts here.
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/github-script@v8
+        with:
+          script: |
+            const enable = require('./.github/scripts/dependabot-automerge.cjs');
+            await enable({ github, context, core });

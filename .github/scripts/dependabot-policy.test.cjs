@@ -5,7 +5,8 @@ function sample() {
   return {
     repository: { full_name: "L03sch/sesisenaiaction-hub", allow_auto_merge: true },
     pr: { user: { login: "dependabot[bot]" }, state: "open", draft: false, base: { ref: "main" }, head: { repo: { full_name: "L03sch/sesisenaiaction-hub" } }, mergeable: true, mergeable_state: "clean" },
-    protection: { required_status_checks: { strict: true, contexts: requiredChecks } },
+    branch: { protected: true, protection: { required_status_checks: { contexts: requiredChecks } } },
+    upToDate: true,
     checks: requiredChecks.map(name => ({ name, status: "completed", conclusion: "success" })),
     statuses: [],
   };
@@ -21,9 +22,10 @@ for (const [name, change] of [
   ["conflict", x => { x.pr.mergeable = false; }],
   ["outdated branch", x => { x.pr.mergeable_state = "behind"; }],
   ["unknown mergeability", x => { x.pr.mergeable = null; }],
-  ["missing protection", x => { x.protection = null; }],
-  ["non-strict protection", x => { x.protection.required_status_checks.strict = false; }],
-  ["missing required rule", x => { x.protection.required_status_checks.contexts = ["permissions"]; }],
+  ["missing protection", x => { x.branch = null; }],
+  ["unprotected branch", x => { x.branch.protected = false; }],
+  ["outdated ancestry", x => { x.upToDate = false; }],
+  ["missing required rule", x => { x.branch.protection.required_status_checks.contexts = ["permissions"]; }],
   ["missing check", x => { x.checks.pop(); }],
   ["pending check", x => { x.checks[0].status = "in_progress"; }],
   ["failed check", x => { x.checks[0].conclusion = "failure"; }],
@@ -32,7 +34,7 @@ for (const [name, change] of [
   ["failed commit status", x => { x.statuses.push({ context: "external", state: "failure" }); }],
 ]) test(`rejects ${name}`, () => { const x = sample(); change(x); assert.ok(eligible(x)); });
 test("accepts checks stored as app-bound branch rules", () => {
-  const x = sample(); x.protection.required_status_checks = { strict: true, checks: requiredChecks.map(context => ({ context, app_id: 15368 })) };
+  const x = sample(); x.branch.protection.required_status_checks = { checks: requiredChecks.map(context => ({ context, app_id: 15368 })) };
   assert.equal(eligible(x), null);
 });
 test("uses latest rerun and does not accept an older success", () => {

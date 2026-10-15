@@ -7,7 +7,7 @@ A conta Jean tem permissão `write`, sem administração. Em 15/10/2026 o reposi
 1. Integrar este PR após os checks passarem.
 2. Em Settings → General → Pull Requests, habilitar **Allow auto-merge** e manter squash disponível.
 3. Em Settings → Branches, proteger `main`: exigir PR, checks **permissions**, **CodeQL (javascript-typescript)** e **CodeQL (java-kotlin)** do GitHub Actions, e **Require branches to be up to date before merging**. Preservar as demais regras/revisões existentes; não conceder bypass ao bot.
-4. O workflow consulta a regra de proteção da branch pela API GraphQL com o token padrão. Se a API negar acesso ou não houver regra tradicional de proteção (por exemplo, apenas um ruleset), a automação falha sem fazer merge; não criar PAT nem conceder bypass para contornar isso.
+4. O workflow consulta o resumo público da proteção em `GET branches/main`, sem acesso administrativo. Compara os commits para exigir que o HEAD inclua a main atual e verifica novamente o SHA da main antes de solicitar auto-merge. Manter a exigência nativa de branch atualizada para cobrir alterações concorrentes. A consulta administrativa anterior por GraphQL foi bloqueada no teste real; não criar PAT nem conceder bypass para contornar isso.
 5. Executar **Dependabot auto-merge** por Run workflow para avaliar os PRs já abertos; os próximos eventos de PR e término de CI fazem nova avaliação automaticamente.
 
 ## Regras

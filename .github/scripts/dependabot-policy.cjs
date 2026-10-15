@@ -1,13 +1,14 @@
 const requiredChecks = ["permissions", "CodeQL (javascript-typescript)", "CodeQL (java-kotlin)"];
 
-function eligible({ pr, repository, protection, checks, statuses }) {
+function eligible({ pr, repository, branch, upToDate, checks, statuses }) {
   if (!repository.allow_auto_merge) return "O proprietário precisa ativar Allow auto-merge.";
   if (pr.user?.login !== "dependabot[bot]" || pr.state !== "open" || pr.draft) return "Não é um PR aberto do Dependabot pronto para revisão.";
   if (pr.base.ref !== "main" || pr.head.repo?.full_name !== repository.full_name) return "Base ou origem não autorizada.";
-  if (pr.mergeable !== true || pr.mergeable_state !== "clean") return "Conflito, proteção pendente ou branch desatualizada.";
-  const rules = protection?.required_status_checks;
+  if (pr.mergeable !== true || !["clean", "blocked"].includes(pr.mergeable_state)) return "Conflito ou branch desatualizada.";
+  const rules = branch?.protection?.required_status_checks;
   const contexts = [...(rules?.contexts || []), ...(rules?.checks || []).map(check => check.context)];
-  if (!rules?.strict || !requiredChecks.every(name => contexts.includes(name))) return "Configure na main os três checks obrigatórios e a exigência de branch atualizada.";
+  if (!branch?.protected || !requiredChecks.every(name => contexts.includes(name))) return "Configure na main os três checks obrigatórios.";
+  if (!upToDate) return "A branch precisa incluir o commit atual da main.";
   // The API returns newest first. A previous failure must not override a successful rerun.
   const latest = new Map();
   for (const check of checks) if (!latest.has(check.name)) latest.set(check.name, check);

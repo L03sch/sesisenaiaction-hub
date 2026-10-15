@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.2.5</version>
+		<version>4.1.1</version>
 		<relativePath/>
 	</parent>
 	<groupId>com.senai</groupId>
@@ -16,7 +16,7 @@
 	
 	<properties>
 		<java.version>11</java.version>
-		<jjwt.version>0.12.3</jjwt.version>
+		<jjwt.version>0.13.0</jjwt.version>
 	</properties>
 	
 	<dependencies>
